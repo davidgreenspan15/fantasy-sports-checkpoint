@@ -17,11 +17,6 @@ export const getRosters: (
   const url = team.rosterUrl;
   const html = await axios.get(url);
   const dom = new JSDOM(html.data);
-  const teamNameAndCity = dom.window.document.querySelectorAll(
-    'h1.ClubhouseHeader__Name span span'
-  );
-  team.city = teamNameAndCity[0].textContent;
-  team.name = teamNameAndCity[1].textContent;
   const tablesArray = dom.window.document.querySelectorAll('table');
   const tablesTitles = dom.window.document.querySelectorAll('div.Table__Title');
 

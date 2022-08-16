@@ -2,9 +2,6 @@ import { League, Team } from '@prisma/client';
 import axios from 'axios';
 import jsdom from 'jsdom';
 
-import { LeaguesResponse } from '../../types/LeagueResponse';
-import { getPlayers } from './getPlayers';
-
 export const getTeams: (
   leagues: (League & {
     teams: Team[];
@@ -27,57 +24,81 @@ const getTeamList = async (
   }
 ) => {
   const { JSDOM } = jsdom;
-  const url = l.depthChartUrl;
+  const url = l.teamsListUrl;
   const html = await axios.get(url);
-  const dom = new JSDOM(html.data);
-
-  const imageURls: string[] = [];
-  const teams: Team[] = [];
-
-  dom.window.document
-    .querySelectorAll('img')
-    .forEach((img: HTMLImageElement) =>
-      imageURls.push(img.src.replace('w=25&h=25', 'w=400&h=400'))
-    );
-
+  const dom = new JSDOM(html.data, { resources: 'usable' });
   const abrImageMap = {
     wsh: 'was',
     jax: 'jac',
     lv: 'oak',
   };
-
   dom.window.document
-    .querySelectorAll('.article-body h2 a')
-    .forEach((a: HTMLAnchorElement) => {
-      if (a.href.includes(`https://www.espn.com/${l.abr}/team/depth/_/name/`)) {
-        const abr = a.href.replace(
-          `https://www.espn.com/${l.abr}/team/depth/_/name/`,
-          ''
-        );
-        const img = imageURls.find(i => {
-          if (i.includes(`teamlogos/${l.abr}/500/`)) {
-            const firstSplit = i.split(`teamlogos/${l.abr}/500/`)[1];
-            const imageIBR = firstSplit.split('.png')[0];
-            if (imageIBR === abr || imageIBR === abrImageMap[abr]) {
-              return i;
-            }
-          }
-        });
-        const team: Team = {
-          id: undefined,
-          depthChartUrl: a.href,
-          abr,
-          imgSrc: img,
-          rosterUrl: `https://www.espn.com/${l.abr}/team/roster/_/name/${abr}`,
-          leagueId: l.id,
-          city: undefined,
-          name: undefined,
-          updatedAt: undefined,
-          createdAt: undefined,
-        };
-        l.teams.push(team as Team);
-      }
-    });
+    .querySelectorAll('section.TeamLinks')
+    .forEach(async (section: HTMLElement) => {
+      const teamMainContainer = section.querySelector('div');
+      const teamUrl =
+        'https://www.espn.com' +
+        teamMainContainer.querySelector('a').href.split('&')[0];
+      const teamAbr = teamUrl.split('/')[7];
+      const abr = abrImageMap[teamAbr] ?? (teamAbr as string);
+      const teamImage = `https://a.espncdn.com/combiner/i?img=/i/teamlogos/${l.abr}/500/${abr}.png`;
 
-  return teams;
+      const teamLinksRow = teamMainContainer.querySelector(
+        'div.TeamLinks__Links'
+      );
+      const allUrls = teamLinksRow.querySelectorAll('a');
+      const allUrlsAs: HTMLAnchorElement[] = [];
+      allUrls.forEach(a => {
+        allUrlsAs.push(a);
+      });
+      const rosterUrl = allUrlsAs.find(a => {
+        return a.textContent.toLowerCase() === 'roster';
+      });
+      const depthChartUrl = allUrlsAs.find(a => {
+        return a.textContent.toLowerCase() === 'depth chart';
+      });
+
+      let team: Team = {
+        id: undefined,
+        depthChartUrl: undefined,
+        teamUrl,
+        abr: teamAbr,
+        imgSrc: teamImage,
+        rosterUrl: undefined,
+        leagueId: l.id,
+        city: undefined,
+        name: undefined,
+        updatedAt: undefined,
+        createdAt: undefined,
+      };
+      if (rosterUrl) {
+        team.rosterUrl = 'https://www.espn.com' + rosterUrl.href;
+      }
+      if (depthChartUrl) {
+        team.depthChartUrl = 'https://www.espn.com' + depthChartUrl.href;
+      }
+      l.teams.push(team as Team);
+    });
+  const response = await Promise.all(
+    l.teams.map(async t => {
+      if (t.rosterUrl) {
+        await getTeamCityAndName(t);
+      }
+      return t;
+    })
+  );
+  return l.teams;
+};
+
+const getTeamCityAndName: (team: Team) => Promise<Team> = async team => {
+  const { JSDOM } = jsdom;
+  const url = team.rosterUrl;
+  const html = await axios.get(url);
+  const dom = new JSDOM(html.data);
+  const teamNameAndCity = dom.window.document.querySelectorAll(
+    'h1.ClubhouseHeader__Name span span'
+  );
+  team.city = teamNameAndCity[0].textContent;
+  team.name = teamNameAndCity[1].textContent;
+  return team;
 };

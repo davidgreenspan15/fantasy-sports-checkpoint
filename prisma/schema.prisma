@@ -11,13 +11,13 @@ datasource db {
 }
 
 model League {
-  id            String    @id @default(uuid())
-  depthChartUrl String    @map(name: "depth_chart_url")
-  abr           String    @unique
-  teams         Team[]
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  updatedAt     DateTime? @map(name: "updated_at")
-  player        Player[]
+  id           String    @id @default(uuid())
+  teamsListUrl String    @map(name: "teams_list_url")
+  abr          String    @unique
+  teams        Team[]
+  createdAt    DateTime  @default(now()) @map(name: "created_at")
+  updatedAt    DateTime? @map(name: "updated_at")
+  player       Player[]
 
   @@map(name: "leagues")
 }
@@ -26,8 +26,9 @@ model Team {
   id            String    @id @default(uuid())
   league        League    @relation(fields: [leagueId], references: [id])
   leagueId      String    @map(name: "league_id")
-  depthChartUrl String    @map(name: "depth_chart_url")
+  depthChartUrl String?   @map(name: "depth_chart_url")
   rosterUrl     String    @map(name: "roster_url")
+  teamUrl       String    @map(name: "team_url")
   city          String?
   name          String?
   abr           String

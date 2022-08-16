@@ -12,7 +12,9 @@ export const getPlayers: (
   const response = await Promise.all(
     teams.map(async team => {
       await getRosters(team);
-      await getTeamDepthChart(team);
+      if (team.depthChartUrl) {
+        await getTeamDepthChart(team);
+      }
       return team;
     })
   );

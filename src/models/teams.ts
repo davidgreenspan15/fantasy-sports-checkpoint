@@ -3,12 +3,16 @@ import { Prisma, PrismaClient, Team } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export const createTeams = async (teams: Prisma.TeamCreateManyInput[]) => {
-  const ts = await prisma.team.createMany({
-    data: teams,
-    skipDuplicates: true,
-  });
+  try {
+    const ts = await prisma.team.createMany({
+      data: teams,
+      skipDuplicates: true,
+    });
 
-  return ts;
+    return ts;
+  } catch (err) {
+    console.error(err);
+  }
 };
 
 export const updateTeams = async (teams: Prisma.TeamUpdateInput[]) => {
