@@ -1,10 +1,14 @@
 import { AllPlayers, PlayerData } from '../../types/Players';
 import jsdom from 'jsdom';
 import axios from 'axios';
-import { Teams } from '../../types/Teams';
+import { Team, Player, FantasyProsData } from '@prisma/client';
 
-const getFantasyProsData: (teams: Teams) => Promise<Teams> = async teams => {
-  const allPlayers: AllPlayers = [];
+const getFantasyProsData: (
+  teams: (Team & {
+    players: Player[];
+  })[]
+) => Promise<FantasyProsData[]> = async teams => {
+  const fpsData: FantasyProsData[] = [];
   ///
   //code here
   const { JSDOM } = jsdom;
@@ -30,11 +34,11 @@ const getFantasyProsData: (teams: Teams) => Promise<Teams> = async teams => {
   if (team) {
     const player = team.players.find(p => p.name.toLowerCase() === playerName);
     if (player) {
-      if (!isNaN(playerRank)) {
-        player.rank = playerRank;
-      }
+      const fpsPlayerData: FantasyProsData = {
+        id: null,
+      };
     }
   }
 
-  return teams;
+  return fpsData;
 };

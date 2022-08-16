@@ -1,9 +1,12 @@
 import express from 'express';
 import expressWinston from 'express-winston';
 import winston from 'winston';
+import { getLeagues, listLeagues } from './models/leagues';
+import { createPlayers } from './models/players';
+import { createTeams, listTeams, updateTeams } from './models/teams';
+import { getPlayers } from './requests/espn/getPlayers';
 
 import { getTeams } from './requests/espn/getTeams';
-import { leaguesInfo } from './util/leagueinfo';
 
 const app = express();
 
@@ -48,18 +51,37 @@ app.use(
 app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 // SEARCH REQUEST
 
-app.get('/getDepthChart', (req, res) => {
-  const workflow: Workflow = {
-    getTeamsList: false,
-    getPlayersRoster: false,
-    getPlayersDepthChart: false,
-    get: false,
-    updatingTeamsDB: false,
-    updatingPlayersDB: false,
-  };
-  getTeams({ workflow, leagues: leaguesInfo })
+app.get('/setTeams', async (req, res) => {
+  const leagues = await getLeagues();
+  getTeams(leagues)
     .then(async resp => {
-      res.status(200).json({ resp });
+      try {
+        const teams = await createTeams(resp);
+        res.status(200).json({ resp, teams });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ err });
+      }
+    })
+    .catch(err => {
+      res.status(500).json({ err });
+    });
+});
+
+app.get('/setPlayers', async (req, res) => {
+  const teams = await listTeams();
+  getPlayers(teams)
+    .then(async resp => {
+      const { teams, players } = resp;
+      try {
+        const ts = await updateTeams(teams);
+        const ps = await createPlayers(players);
+
+        res.status(200).json({ ps, ts });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ err });
+      }
     })
     .catch(err => {
       res.status(500).json({ err });
@@ -70,7 +92,15 @@ app.listen(PORT, () => {
   console.log(`app listening at http://localhost:${PORT}`);
 });
 
-app.get('/getPlayers', (req, res) => {});
+app.get('/getPlayers', async (req, res) => {
+  try {
+    const leagues = await listLeagues();
+    res.status(200).json({ leagues });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ err });
+  }
+});
 
 export interface Workflow {
   getTeamsList: boolean;

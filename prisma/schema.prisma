@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model League {
+  id            String    @id @default(uuid())
+  depthChartUrl String    @map(name: "depth_chart_url")
+  abr           String    @unique
+  teams         Team[]
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime? @map(name: "updated_at")
+  player        Player[]
+
+  @@map(name: "leagues")
+}
+
+model Team {
+  id            String    @id @default(uuid())
+  league        League    @relation(fields: [leagueId], references: [id])
+  leagueId      String    @map(name: "league_id")
+  depthChartUrl String    @map(name: "depth_chart_url")
+  rosterUrl     String    @map(name: "roster_url")
+  city          String?
+  name          String?
+  abr           String
+  imgSrc        String    @map(name: "img_src")
+  players       Player[]
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime? @map(name: "updated_at")
+
+  @@map(name: "teams")
+}
+
+model Player {
+  id                  String           @id @default(uuid())
+  team                Team             @relation(fields: [teamId], references: [id])
+  teamId              String           @map(name: "team_id")
+  name                String
+  injuryStatus        String?          @map(name: "injury_status")
+  pos                 String
+  depth               Int?
+  positionGroup       String           @map(name: "position_group")
+  wrSet               Int?             @map(name: "wr_set")
+  playerUrl           String           @map(name: "player_url")
+  playerImageSrc      String           @map(name: "player_image_src")
+  height              String
+  weight              String
+  experience          String
+  college             String
+  age                 String?
+  number              String
+  playerDepthPosition String[]         @map(name: "player_depth_position")
+  createdAt           DateTime         @default(now()) @map(name: "created_at")
+  updatedAt           DateTime?        @map(name: "updated_at")
+  League              League?          @relation(fields: [leagueId], references: [id])
+  leagueId            String?          @map(name: "league_id")
+  FantasyProsData     FantasyProsData?
+
+  @@map(name: "players")
+}
+
+model FantasyProsData {
+  id                 String    @id @default(uuid())
+  player             Player    @relation(fields: [playerId], references: [id])
+  playerId           String    @unique @map(name: "player_id")
+  rank               Int
+  playerNmae         String    @map(name: "player_name")
+  pos                String
+  byeWeek            Int       @map(name: "bye_week")
+  strengthOgSchedule String    @map(name: "strength_of_schedule")
+  avgAdp             String    @map(name: "avg_adp")
+  notes              String
+  avgFanPoints       Float     @map(name: "avg_fan_points")
+  avgPassingYds      Float     @map(name: "avg_passing_yards")
+  avgPassingTds      Float     @map(name: "avg_passing_tds")
+  avgReceivingRec    Float     @map(name: "avg_receiving_rec")
+  avgReceivingYds    Float     @map(name: "avg_receiving_yds")
+  avgReceivingTds    Float     @map(name: "avg_receiving_tds")
+  avgRushingAtt      Float     @map(name: "avg_rushing_att")
+  avgRushiingYds     Float     @map(name: "avg_rushing_yds")
+  avgRushingTds      Float     @map(name: "avg_rushing_tds")
+  totalFanPoints     Float     @map(name: "total_fan_points")
+  totalPassingYds    Float     @map(name: "total_passing_yds")
+  totalPassingTds    Float     @map(name: "total_passing_tds")
+  totalReceivingRec  Float     @map(name: "total_receiving_rec")
+  totalReceivingYds  Float     @map(name: "total_receiving_yds")
+  totalReceivingTds  Float     @map(name: "total_receiving_tds")
+  totalRushingAtt    Float     @map(name: "total_rushing_att")
+  totalRushiingYds   Float     @map(name: "total_rushing_yds")
+  totalRushingTds    Float     @map(name: "total_rushing_tds")
+  createdAt          DateTime  @default(now()) @map(name: "created_at")
+  updatedAt          DateTime? @map(name: "updated_at")
+
+  @@map(name: "fantasy_pros_data")
+}

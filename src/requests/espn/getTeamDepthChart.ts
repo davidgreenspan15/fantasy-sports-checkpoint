@@ -1,10 +1,18 @@
+import { Team, Player } from '@prisma/client';
 import axios from 'axios';
 import jsdom from 'jsdom';
 
 import { Status } from '../../types/Players';
-import { Team } from '../../types/Teams';
 
-export const getTeamDepthChart: (team: Team) => Promise<Team> = async team => {
+export const getTeamDepthChart: (
+  team: Team & {
+    players: Player[];
+  }
+) => Promise<
+  Team & {
+    players: Player[];
+  }
+> = async team => {
   const { JSDOM } = jsdom;
   const url = team.depthChartUrl;
   const html = await axios.get(url);
@@ -24,7 +32,9 @@ export const getTeamDepthChart: (team: Team) => Promise<Team> = async team => {
 
 const handleDepthChartRow: (
   pr: Element,
-  t: Team,
+  t: Team & {
+    players: Player[];
+  },
   tableIDX: number,
   tablesArray: NodeListOf<Element>,
   wrSet?: number

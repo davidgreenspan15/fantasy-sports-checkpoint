@@ -1,10 +1,18 @@
+import { Player, Team } from '@prisma/client';
 import axios from 'axios';
 import jsdom from 'jsdom';
 
 import { PlayerData, Pos } from '../../types/Players';
-import { Team } from '../../types/Teams';
 
-export const getRosters: (team: Team) => Promise<Team> = async team => {
+export const getRosters: (
+  team: Team & {
+    players: Player[];
+  }
+) => Promise<
+  Team & {
+    players: Player[];
+  }
+> = async team => {
   const { JSDOM } = jsdom;
   const url = team.rosterUrl;
   const html = await axios.get(url);
@@ -21,7 +29,7 @@ export const getRosters: (team: Team) => Promise<Team> = async team => {
     const positionGroup = tablesTitles[idx].textContent;
     const playerRows = ta.querySelectorAll('tbody tr.Table__TR');
     playerRows.forEach(pr => {
-      const playerData = handlePlayerRow(pr, positionGroup);
+      const playerData = handlePlayerRow(pr, positionGroup, team);
       team.players.push(playerData);
     });
   });
@@ -29,17 +37,20 @@ export const getRosters: (team: Team) => Promise<Team> = async team => {
   return team;
 };
 
-const handlePlayerRow: (playerRow: Element, positionGroup) => PlayerData = (
-  playerRow,
-  positionGroup
-) => {
+const handlePlayerRow: (
+  playerRow: Element,
+  positionGroup: string,
+  team: Team
+) => Player = (playerRow, positionGroup, team) => {
   const tds = playerRow.querySelectorAll('td');
   const playerImageSection = tds[0].querySelector(
     'div.headshot div.Image__Wrapper'
   );
 
   const playerImage = playerImageSection.querySelector('img').alt;
-  const playerData: PlayerData = {
+  const playerData: Player = {
+    id: undefined,
+    teamId: team.id,
     playerImageSrc: playerImage,
     playerUrl: tds[1].querySelector('a').href,
     name: tds[1].querySelector('a').textContent,
@@ -51,6 +62,13 @@ const handlePlayerRow: (playerRow: Element, positionGroup) => PlayerData = (
     experience: tds[6].querySelector('div').textContent,
     college: tds[7].querySelector('div').textContent,
     positionGroup,
+    playerDepthPosition: [],
+    injuryStatus: undefined,
+    depth: undefined,
+    wrSet: undefined,
+    createdAt: undefined,
+    leagueId: team.leagueId,
+    updatedAt: undefined,
   };
 
   return playerData;

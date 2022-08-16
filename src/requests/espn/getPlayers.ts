@@ -1,13 +1,23 @@
+import { Team, Player } from '@prisma/client';
 import { Workflow } from '../..';
-import { Team } from '../../types/Teams';
 import { getRosters } from './getRosters';
 import { getTeamDepthChart } from './getTeamDepthChart';
 
 export const getPlayers: (
-  team: Team,
-  workflow: Workflow
-) => Promise<Team> = async team => {
-  team = await getRosters(team);
-  team = await getTeamDepthChart(team);
-  return team;
+  teams: (Team & {
+    players: Player[];
+  })[]
+) => Promise<{ teams: Team[]; players: Player[] }> = async teams => {
+  const players = [];
+  const response = await Promise.all(
+    teams.map(async team => {
+      await getRosters(team);
+      await getTeamDepthChart(team);
+      return team;
+    })
+  );
+  teams.forEach(l => players.push(...l.players));
+  teams.map(t => (t.players = []));
+  console.debug({ players });
+  return { teams, players };
 };

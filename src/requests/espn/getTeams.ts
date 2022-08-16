@@ -1,41 +1,38 @@
+import { League, Team } from '@prisma/client';
 import axios from 'axios';
 import jsdom from 'jsdom';
 
-import { League, LeaguesResponse } from '../../types/LeagueResponse';
-import { Teams } from '../../types/Teams';
+import { LeaguesResponse } from '../../types/LeagueResponse';
 import { getPlayers } from './getPlayers';
 
 export const getTeams: (
-  leagueResponse: LeaguesResponse
-) => Promise<LeaguesResponse> = async leagueResponse => {
-  const { leagues, workflow } = leagueResponse;
+  leagues: (League & {
+    teams: Team[];
+  })[]
+) => Promise<Team[]> = async leagues => {
+  const teams: Team[] = [];
   const response = await Promise.all(
     leagues.map(async l => {
-      await getTeamList(l).then(async lg => {
-        const resp = await Promise.all(
-          lg.teams.map(async t => {
-            const team = await getPlayers(t, workflow);
-            return team;
-          })
-        );
-        lg.teams = resp;
-        return lg;
-      });
-
+      await getTeamList(l);
       return l;
     })
   );
-  return { leagues: response, workflow };
+  leagues.forEach(l => teams.push(...l.teams));
+  return teams;
 };
 
-const getTeamList = async (l: League) => {
+const getTeamList = async (
+  l: League & {
+    teams: Team[];
+  }
+) => {
   const { JSDOM } = jsdom;
-  const url = l.depthChartListUrl;
+  const url = l.depthChartUrl;
   const html = await axios.get(url);
   const dom = new JSDOM(html.data);
 
   const imageURls: string[] = [];
-  const teams: Teams = [];
+  const teams: Team[] = [];
 
   dom.window.document
     .querySelectorAll('img')
@@ -52,33 +49,35 @@ const getTeamList = async (l: League) => {
   dom.window.document
     .querySelectorAll('.article-body h2 a')
     .forEach((a: HTMLAnchorElement) => {
-      if (
-        a.href.includes(`https://www.espn.com/${l.name}/team/depth/_/name/`)
-      ) {
+      if (a.href.includes(`https://www.espn.com/${l.abr}/team/depth/_/name/`)) {
         const abr = a.href.replace(
-          `https://www.espn.com/${l.name}/team/depth/_/name/`,
+          `https://www.espn.com/${l.abr}/team/depth/_/name/`,
           ''
         );
         const img = imageURls.find(i => {
-          if (i.includes(`teamlogos/${l.name}/500/`)) {
-            const firstSplit = i.split(`teamlogos/${l.name}/500/`)[1];
+          if (i.includes(`teamlogos/${l.abr}/500/`)) {
+            const firstSplit = i.split(`teamlogos/${l.abr}/500/`)[1];
             const imageIBR = firstSplit.split('.png')[0];
             if (imageIBR === abr || imageIBR === abrImageMap[abr]) {
               return i;
             }
           }
         });
-        const team = {
+        const team: Team = {
+          id: undefined,
           depthChartUrl: a.href,
           abr,
           imgSrc: img,
-          rosterUrl: `https://www.espn.com/${l.name}/team/roster/_/name/${abr}`,
-          players: [],
+          rosterUrl: `https://www.espn.com/${l.abr}/team/roster/_/name/${abr}`,
+          leagueId: l.id,
+          city: undefined,
+          name: undefined,
+          updatedAt: undefined,
+          createdAt: undefined,
         };
-        teams.push(team);
+        l.teams.push(team as Team);
       }
     });
 
-  l.teams = teams;
-  return l;
+  return teams;
 };
