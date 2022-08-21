@@ -22,7 +22,11 @@ export const listLeagues = async () => {
     include: {
       teams: {
         include: {
-          players: true,
+          players: {
+            include: {
+              fantasyProsData: true,
+            },
+          },
         },
       },
     },

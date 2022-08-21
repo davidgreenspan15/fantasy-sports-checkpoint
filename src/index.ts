@@ -1,13 +1,26 @@
 import express from 'express';
 import expressWinston from 'express-winston';
 import winston from 'winston';
+import {
+  createFantasyProsPlayers,
+  getFPSPlayersForDraft,
+} from './models/fantasaySportsData';
 import { getLeagues, listLeagues } from './models/leagues';
 import { createPlayers } from './models/players';
-import { createTeams, listTeams, updateTeams } from './models/teams';
+import {
+  createTeams,
+  listTeams,
+  updateTeams,
+  listFootballTeams,
+} from './models/teams';
 import { getPlayers } from './requests/espn/getPlayers';
 
 import { getTeams } from './requests/espn/getTeams';
+import { getFantasyProsData } from './requests/fantasyPros/getFantasyFootballRankings';
+import { getFantasyProsDataCSV } from './requests/fantasyPros/getFantasyFootballRankingsCSV';
+import { Prisma, PrismaClient, Team } from '@prisma/client';
 
+const prisma = new PrismaClient();
 const app = express();
 
 const PORT = process.env.PORT || 8000;
@@ -74,10 +87,27 @@ app.get('/setPlayers', async (req, res) => {
     .then(async resp => {
       const { teams, players } = resp;
       try {
-        const ts = await updateTeams(teams);
         const ps = await createPlayers(players);
 
-        res.status(200).json({ ps, ts });
+        res.status(200).json({ ps });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ err });
+      }
+    })
+    .catch(err => {
+      res.status(500).json({ err });
+    });
+});
+
+app.get('/setFpsData', async (req, res) => {
+  const teams = await listFootballTeams();
+  getFantasyProsDataCSV(teams)
+    .then(async resp => {
+      try {
+        const ps = await createFantasyProsPlayers(resp);
+
+        res.status(200).json({ resp, ps });
       } catch (err) {
         console.error(err);
         res.status(500).json({ err });
@@ -96,6 +126,29 @@ app.get('/getPlayers', async (req, res) => {
   try {
     const leagues = await listLeagues();
     res.status(200).json({ leagues });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ err });
+  }
+});
+
+app.get('/getDraftBoard', async (req, res) => {
+  try {
+    const players = await getFPSPlayersForDraft();
+    res.status(200).json({ players });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ err });
+  }
+});
+
+app.post('/query', async (req, res) => {
+  const query = req.body.query;
+
+  try {
+    const result = await prisma.$queryRawUnsafe(query);
+
+    res.status(200).json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ err });

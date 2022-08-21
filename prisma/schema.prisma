@@ -46,36 +46,44 @@ model Player {
   teamId              String           @map(name: "team_id")
   name                String
   injuryStatus        String?          @map(name: "injury_status")
-  pos                 String
+  pos                 String?
   depth               Int?
-  positionGroup       String           @map(name: "position_group")
-  wrSet               Int?             @map(name: "wr_set")
+  positionGroup       String?          @map(name: "position_group")
   playerUrl           String           @map(name: "player_url")
   playerImageSrc      String           @map(name: "player_image_src")
-  height              String
-  weight              String
-  experience          String
-  college             String
+  height              String?
+  weight              String?
+  experience          String?
+  college             String?
   age                 String?
-  number              String
+  number              String?
   playerDepthPosition String[]         @map(name: "player_depth_position")
   createdAt           DateTime         @default(now()) @map(name: "created_at")
   updatedAt           DateTime?        @map(name: "updated_at")
   League              League?          @relation(fields: [leagueId], references: [id])
   leagueId            String?          @map(name: "league_id")
-  FantasyProsData     FantasyProsData?
+  fantasyProsData     FantasyProsData?
+  batting             String?
+  throwing            String?
+  shot                String?
+  birthPlace          String?          @map(name: "birth_place")
+  birthDate           String?          @map(name: "birth_date")
+  salary              String?
+  espnPlayerId        String?          @map(name: "espn_player_id")
 
+  @@unique([leagueId, espnPlayerId, name])
   @@map(name: "players")
 }
 
 model FantasyProsData {
   id                 String    @id @default(uuid())
-  player             Player    @relation(fields: [playerId], references: [id])
-  playerId           String    @unique @map(name: "player_id")
+  player             Player?   @relation(fields: [playerId], references: [id])
+  playerId           String?   @unique @map(name: "player_id")
   rank               Int
-  playerNmae         String    @map(name: "player_name")
+  playerName         String    @map(name: "player_name")
+  teamAbr            String    @map(name: "team_abr")
   pos                String
-  byeWeek            Int       @map(name: "bye_week")
+  byeWeek            Int?      @map(name: "bye_week")
   strengthOgSchedule String    @map(name: "strength_of_schedule")
   avgAdp             String    @map(name: "avg_adp")
   notes              String
@@ -86,7 +94,7 @@ model FantasyProsData {
   avgReceivingYds    Float     @map(name: "avg_receiving_yds")
   avgReceivingTds    Float     @map(name: "avg_receiving_tds")
   avgRushingAtt      Float     @map(name: "avg_rushing_att")
-  avgRushiingYds     Float     @map(name: "avg_rushing_yds")
+  avgRushingYds      Float     @map(name: "avg_rushing_yds")
   avgRushingTds      Float     @map(name: "avg_rushing_tds")
   totalFanPoints     Float     @map(name: "total_fan_points")
   totalPassingYds    Float     @map(name: "total_passing_yds")
@@ -95,7 +103,7 @@ model FantasyProsData {
   totalReceivingYds  Float     @map(name: "total_receiving_yds")
   totalReceivingTds  Float     @map(name: "total_receiving_tds")
   totalRushingAtt    Float     @map(name: "total_rushing_att")
-  totalRushiingYds   Float     @map(name: "total_rushing_yds")
+  totalRushingYds    Float     @map(name: "total_rushing_yds")
   totalRushingTds    Float     @map(name: "total_rushing_tds")
   createdAt          DateTime  @default(now()) @map(name: "created_at")
   updatedAt          DateTime? @map(name: "updated_at")

@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, Team } from '@prisma/client';
+import { Prisma, PrismaClient, Team, FantasyProsData } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -38,13 +38,29 @@ export const updateTeams = async (teams: Prisma.TeamUpdateInput[]) => {
 };
 
 export const listTeams = async () => {
-  const leagues = await prisma.team.findMany({
+  const teams = await prisma.team.findMany({
     orderBy: {
       createdAt: 'desc',
     },
     include: {
       players: true,
+      league: true,
     },
   });
-  return leagues;
+  return teams;
+};
+
+export const listFootballTeams = async () => {
+  const teams = await prisma.team.findMany({
+    orderBy: {
+      createdAt: 'desc',
+    },
+    where: {
+      leagueId: 'ee2f5bc3-7eff-4c46-9cb4-48204dbdc22b',
+    },
+    include: {
+      players: true,
+    },
+  });
+  return teams;
 };

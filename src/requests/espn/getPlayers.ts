@@ -1,10 +1,11 @@
-import { Team, Player } from '@prisma/client';
+import { Team, Player, League } from '@prisma/client';
 import { Workflow } from '../..';
 import { getRosters } from './getRosters';
 import { getTeamDepthChart } from './getTeamDepthChart';
 
 export const getPlayers: (
   teams: (Team & {
+    league: League;
     players: Player[];
   })[]
 ) => Promise<{ teams: Team[]; players: Player[] }> = async teams => {
@@ -20,6 +21,5 @@ export const getPlayers: (
   );
   teams.forEach(l => players.push(...l.players));
   teams.map(t => (t.players = []));
-  console.debug({ players });
   return { teams, players };
 };

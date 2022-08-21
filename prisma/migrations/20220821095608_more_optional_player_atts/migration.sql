@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "players" ALTER COLUMN "position_group" DROP NOT NULL,
+ALTER COLUMN "height" DROP NOT NULL,
+ALTER COLUMN "weight" DROP NOT NULL,
+ALTER COLUMN "number" DROP NOT NULL;
