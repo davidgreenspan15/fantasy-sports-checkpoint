@@ -6,7 +6,7 @@ import {
   getFPSPlayersForDraft,
 } from './models/fantasaySportsData';
 import { getLeagues, listLeagues } from './models/leagues';
-import { createPlayers } from './models/players';
+import { createPlayers, listNflPlayersWithNoFPSData } from './models/players';
 import {
   createTeams,
   listTeams,
@@ -18,7 +18,8 @@ import { getPlayers } from './requests/espn/getPlayers';
 import { getTeams } from './requests/espn/getTeams';
 import { getFantasyProsData } from './requests/fantasyPros/getFantasyFootballRankings';
 import { getFantasyProsDataCSV } from './requests/fantasyPros/getFantasyFootballRankingsCSV';
-import { Prisma, PrismaClient, Team } from '@prisma/client';
+import { FantasyProsData, Prisma, PrismaClient, Team } from '@prisma/client';
+import logger from './util/logger';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -49,7 +50,8 @@ app.use(
     transports: [new winston.transports.Console()],
     format: winston.format.combine(
       winston.format.colorize(),
-      winston.format.json()
+      winston.format.json(),
+      winston.format.cli()
     ),
     meta: false,
     msg: 'HTTP  ',
@@ -72,7 +74,7 @@ app.get('/setTeams', async (req, res) => {
         const teams = await createTeams(resp);
         res.status(200).json({ resp, teams });
       } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ err });
       }
     })
@@ -91,7 +93,7 @@ app.get('/setPlayers', async (req, res) => {
 
         res.status(200).json({ ps });
       } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ err });
       }
     })
@@ -109,7 +111,7 @@ app.get('/setFpsData', async (req, res) => {
 
         res.status(200).json({ resp, ps });
       } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ err });
       }
     })
@@ -119,7 +121,7 @@ app.get('/setFpsData', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`app listening at http://localhost:${PORT}`);
+  logger.debug(`app listening at http://localhost:${PORT}`);
 });
 
 app.get('/getPlayers', async (req, res) => {
@@ -127,17 +129,19 @@ app.get('/getPlayers', async (req, res) => {
     const leagues = await listLeagues();
     res.status(200).json({ leagues });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ err });
   }
 });
 
 app.get('/getDraftBoard', async (req, res) => {
   try {
-    const players = await getFPSPlayersForDraft();
+    const fpsPlayers = await getFPSPlayersForDraft();
+    const playersWithNoFps = await listNflPlayersWithNoFPSData();
+    const players = mergeValues(playersWithNoFps, fpsPlayers);
     res.status(200).json({ players });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ err });
   }
 });
@@ -150,7 +154,7 @@ app.post('/query', async (req, res) => {
 
     res.status(200).json(result);
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ err });
   }
 });
@@ -163,3 +167,141 @@ export interface Workflow {
   updatingTeamsDB: boolean;
   updatingPlayersDB: boolean;
 }
+
+const mergeValues: (
+  v2: {
+    id: string;
+    number: string;
+    name: string;
+    pos: string;
+    team: Team;
+    injuryStatus: string;
+    depth: number;
+    positionGroup: string;
+    playerImageSrc: string;
+    height: string;
+    weight: string;
+    experience: string;
+    playerDepthPosition: string[];
+  }[],
+  v1: (FantasyProsData & {
+    player: {
+      number: string;
+      pos: string;
+      team: Team;
+      name: string;
+      injuryStatus: string;
+      depth: number;
+      positionGroup: string;
+      playerImageSrc: string;
+      height: string;
+      weight: string;
+      experience: string;
+      playerDepthPosition: string[];
+    };
+  })[]
+) => NormalizedPlayerResponse[] = (v2, v1) => {
+  const normalizedP: NormalizedPlayerResponse[] = [];
+  v1.forEach(p => {
+    const player = p.player;
+    const team = player?.team;
+
+    const playerDepthPosition = p.player?.playerDepthPosition
+      ? p.player?.playerDepthPosition.join(', ')
+      : undefined;
+    delete p.player;
+    const teamName = [team?.city, team?.name].filter(v => !!v).join(' ');
+    const getRndP = getRoundAndPick(p.avgAdp);
+    const nPlayer: NormalizedPlayerResponse = {
+      ...player,
+      ...p,
+      pos: p.pos ?? player.pos,
+      teamName: teamName,
+      teamAbr: team?.abr,
+      teamImgSrc: team?.imgSrc,
+      playerDepthPosition,
+      drafted: false,
+      getRoundAndPick: getRndP,
+    };
+    normalizedP.push(nPlayer);
+  });
+  v2.forEach(p => {
+    const team = p?.team;
+    const sameTeam = normalizedP.find(n => n.teamAbr === team.abr);
+    const playerDepthPosition = p.playerDepthPosition
+      ? p.playerDepthPosition.join(', ')
+      : undefined;
+    const teamName = [team?.city, team?.name].filter(v => !!v).join(' ');
+    const nPlayer: NormalizedPlayerResponse = {
+      ...p,
+      playerName: p.name,
+      playerId: p.id,
+      teamName: teamName,
+      teamAbr: team.abr,
+      teamImgSrc: team.imgSrc,
+      byeWeek: sameTeam.byeWeek,
+      playerDepthPosition,
+      drafted: false,
+    };
+    normalizedP.push(nPlayer);
+  });
+  return normalizedP;
+};
+
+export interface NormalizedPlayerResponse {
+  id: string;
+  playerId: null | string;
+  rank?: number;
+  playerName: string;
+  teamAbr: string;
+  pos: string;
+  byeWeek: number | null;
+  strengthOgSchedule?: string;
+  avgAdp?: string;
+  notes?: string;
+  avgFanPoints?: number;
+  avgPassingYds?: number;
+  avgPassingTds?: number;
+  avgReceivingRec?: number;
+  avgReceivingYds?: number;
+  avgReceivingTds?: number;
+  avgRushingAtt?: number;
+  avgRushingYds?: number;
+  avgRushingTds?: number;
+  totalFanPoints?: number;
+  totalPassingYds?: number;
+  totalPassingTds?: number;
+  totalReceivingRec?: number;
+  totalReceivingYds?: number;
+  totalReceivingTds?: number;
+  totalRushingAtt?: number;
+  totalRushingYds?: number;
+  totalRushingTds?: number;
+  name: string;
+  injuryStatus: string | null;
+  depth: number | null;
+  positionGroup: string | null;
+  playerDepthPosition: string;
+  playerImageSrc: string;
+  height: string | null;
+  weight: null | string;
+  number: null | string;
+  teamName?: string | null;
+  teamImgSrc?: string | null;
+  experience: string | null;
+  drafted: boolean;
+  getRoundAndPick?: string;
+}
+
+const getRoundAndPick = (adp?: string) => {
+  if (adp) {
+    const playerRoundSplit = adp.split('.');
+    let round = Math.ceil(parseInt(playerRoundSplit[0]) / 12);
+    let pick = Math.round(parseFloat(adp) / round);
+    if (pick === 0) {
+      pick = 12;
+    }
+    const draftRoundAndPick = `Round ${round} Pick ${pick}`;
+    return draftRoundAndPick;
+  }
+};

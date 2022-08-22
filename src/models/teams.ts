@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient, Team, FantasyProsData } from '@prisma/client';
+import logger from '../util/logger';
 
 const prisma = new PrismaClient();
 
@@ -11,7 +12,7 @@ export const createTeams = async (teams: Prisma.TeamCreateManyInput[]) => {
 
     return ts;
   } catch (err) {
-    console.error(err);
+    logger.error(err);
   }
 };
 
@@ -28,7 +29,7 @@ export const updateTeams = async (teams: Prisma.TeamUpdateInput[]) => {
         });
         return ts;
       } catch (err) {
-        console.error(err);
+        logger.error(err);
         return err;
       }
     })

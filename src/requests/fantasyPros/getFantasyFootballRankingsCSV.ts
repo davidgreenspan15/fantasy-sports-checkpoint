@@ -6,20 +6,19 @@ import { Domain } from 'domain';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as csv from 'fast-csv';
+import logger from '../../util/logger';
 
 export const getFantasyProsDataCSV: (
   teams: (Team & {
     players: Player[];
   })[]
 ) => Promise<FantasyProsData[]> = async teams => {
-  // overview
-
   const p: FantasyProsData[] = await new Promise((resolve, reject) => {
     const fpsData = [];
 
     fs.createReadStream(path.resolve('src', 'csvs', 'fps', 'fps_overview.csv'))
       .pipe(csv.parse({ headers: true }))
-      .on('error', error => console.error(error))
+      .on('error', error => logger.error(error))
       .on('data', row => {
         const player = getOverView(row, teams);
         if (player) {
@@ -34,7 +33,7 @@ export const getFantasyProsDataCSV: (
     const fpsData = [];
     fs.createReadStream(path.resolve('src', 'csvs', 'fps', 'fps_ranks.csv'))
       .pipe(csv.parse({ headers: true }))
-      .on('error', error => console.error(error))
+      .on('error', error => logger.error(error))
       .on('data', row => {
         const player = getRanks(row, p);
         if (player) {
@@ -49,7 +48,7 @@ export const getFantasyProsDataCSV: (
     const fpsData = [];
     fs.createReadStream(path.resolve('src', 'csvs', 'fps', 'fps_notes.csv'))
       .pipe(csv.parse({ headers: true }))
-      .on('error', error => console.error(error))
+      .on('error', error => logger.error(error))
       .on('data', row => {
         const player = getNotes(row, p);
         if (player) {
@@ -66,7 +65,7 @@ export const getFantasyProsDataCSV: (
       path.resolve('src', 'csvs', 'fps', 'fps_total_stats.csv')
     )
       .pipe(csv.parse({ headers: true }))
-      .on('error', error => console.error(error))
+      .on('error', error => logger.error(error))
       .on('data', row => {
         const player = geTotalStats(row, p);
         if (player) {
@@ -83,7 +82,7 @@ export const getFantasyProsDataCSV: (
       path.resolve('src', 'csvs', 'fps', 'fps_average_stats.csv')
     )
       .pipe(csv.parse({ headers: true }))
-      .on('error', error => console.error(error))
+      .on('error', error => logger.error(error))
       .on('data', row => {
         const player = getAvgStats(row, p);
         if (player) {
