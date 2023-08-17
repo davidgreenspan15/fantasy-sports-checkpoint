@@ -1,3 +1,4 @@
+import { getTeamDepthChart } from './requests/espn/getTeamDepthChart';
 import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import expressWinston from 'express-winston';
@@ -61,6 +62,18 @@ app.use(
 app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 // SEARCH REQUEST
 
+app.get('/resetData', async (req, res) => {
+  try {
+    await prisma.fantasyProsData.deleteMany({});
+    await prisma.player.deleteMany({});
+    await prisma.team.deleteMany({});
+    res.status(200).json({ messgae: 'Data Reset' });
+  } catch (err) {
+    logger.error(err);
+    res.status(500).json({ err });
+  }
+});
+
 app.get('/setTeams', async (req, res) => {
   const leagues = await getLeagues();
   getTeams(leagues)
@@ -85,7 +98,6 @@ app.get('/setPlayers', async (req, res) => {
       const { teams, players } = resp;
       try {
         const ps = await createPlayers(players);
-
         res.status(200).json({ ps });
       } catch (err) {
         logger.error(err);
@@ -128,6 +140,20 @@ app.get('/getPlayers', async (req, res) => {
     res.status(500).json({ err });
   }
 });
+
+// app.get('/testBucs', async (req, res) => {
+//   try {
+//     const teams = await listTeams();
+//     const bucs = teams.find(t => t.league.abr === 'nfl' && t.abr === 'tb');
+//     if (bucs) {
+//       const depthChart = await getTeamDepthChart(bucs);
+//       res.status(200).json({ depthChart });
+//     }
+//   } catch (err) {
+//     logger.error(err);
+//     res.status(500).json({ err });
+//   }
+// });
 
 app.get('/getDraftBoard', async (req, res) => {
   try {

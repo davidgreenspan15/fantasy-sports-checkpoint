@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-     "esModuleInterop": true,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "noUnusedParameters": false,
     "noUnusedLocals": false,
@@ -12,5 +12,4 @@
     "sourceMap": true,
     "outDir": "dist"
   }
-
 }

@@ -63,9 +63,10 @@ const handleDepthChartRow: (
           const secondaryPosition = tr
             .querySelector('.Table__TD')
             .textContent.trim();
-          const count = rowDepthPositions.filter(
-            r => r === secondaryPosition
-          ).length;
+          const count = rowDepthPositions.filter(r => {
+            const output = r.replace(/[0-9]/g, '');
+            return output === secondaryPosition;
+          }).length;
           if (count > 0) {
             const positionCount = count + 1;
             rowDepthPositions.push(secondaryPosition + positionCount);
