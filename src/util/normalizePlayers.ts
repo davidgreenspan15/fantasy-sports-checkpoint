@@ -1,5 +1,5 @@
-import { FantasyProsData, Team } from '@prisma/client';
-import { NormalizedPlayerResponse } from '../types/normalizedPlayers';
+import { FantasyProsData, ScrapedTeam } from "@prisma/client";
+import { NormalizedPlayerResponse } from "../types/normalizedPlayers";
 
 export const mergeValues: (
   v2: {
@@ -7,7 +7,7 @@ export const mergeValues: (
     number: string;
     name: string;
     pos: string;
-    team: Team;
+    team: ScrapedTeam;
     injuryStatus: string;
     depth: number;
     positionGroup: string;
@@ -21,7 +21,7 @@ export const mergeValues: (
     player: {
       number: string;
       pos: string;
-      team: Team;
+      team: ScrapedTeam;
       name: string;
       injuryStatus: string;
       depth: number;
@@ -35,15 +35,15 @@ export const mergeValues: (
   })[]
 ) => NormalizedPlayerResponse[] = (v2, v1) => {
   const normalizedP: NormalizedPlayerResponse[] = [];
-  v1.forEach(p => {
+  v1.forEach((p) => {
     const player = p.player;
     const team = player?.team;
 
     const playerDepthPosition = p.player?.playerDepthPosition
-      ? p.player?.playerDepthPosition.join(', ')
+      ? p.player?.playerDepthPosition.join(", ")
       : undefined;
     delete p.player;
-    const teamName = [team?.city, team?.name].filter(v => !!v).join(' ');
+    const teamName = [team?.city, team?.name].filter((v) => !!v).join(" ");
     const getRndP = getRoundAndPick(p.avgAdp);
     const nPlayer: NormalizedPlayerResponse = {
       ...player,
@@ -58,13 +58,13 @@ export const mergeValues: (
     };
     normalizedP.push(nPlayer);
   });
-  v2.forEach(p => {
+  v2.forEach((p) => {
     const team = p?.team;
-    const sameTeam = normalizedP.find(n => n.teamAbr === team.abr);
+    const sameTeam = normalizedP.find((n) => n.teamAbr === team.abr);
     const playerDepthPosition = p.playerDepthPosition
-      ? p.playerDepthPosition.join(', ')
+      ? p.playerDepthPosition.join(", ")
       : undefined;
-    const teamName = [team?.city, team?.name].filter(v => !!v).join(' ');
+    const teamName = [team?.city, team?.name].filter((v) => !!v).join(" ");
     const nPlayer: NormalizedPlayerResponse = {
       ...p,
       playerName: p.name,
@@ -83,7 +83,7 @@ export const mergeValues: (
 
 const getRoundAndPick = (adp?: string) => {
   if (adp) {
-    const playerRoundSplit = adp.split('.');
+    const playerRoundSplit = adp.split(".");
     let round = Math.ceil(parseInt(playerRoundSplit[0]) / 12);
     let pick = Math.round(parseFloat(adp) / round);
     if (pick === 0) {

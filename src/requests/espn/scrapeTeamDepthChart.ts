@@ -1,29 +1,29 @@
-import { Team, Player } from '@prisma/client';
-import axios from 'axios';
-import jsdom from 'jsdom';
+import axios from "axios";
+import jsdom from "jsdom";
 
-import { Status } from '../../types/Players';
-import { getPlayerID } from '../../util/getEspnPlayerId';
+import { Status } from "../../types/Players";
+import { getPlayerID } from "../../util/getEspnPlayerId";
+import { ScrapedPlayer, ScrapedTeam } from "@prisma/client";
 
-export const getTeamDepthChart: (
-  team: Team & {
-    players: Player[];
+export const scrapeTeamDepthChart: (
+  team: ScrapedTeam & {
+    players: ScrapedPlayer[];
   }
 ) => Promise<
-  Team & {
-    players: Player[];
+  ScrapedTeam & {
+    players: ScrapedPlayer[];
   }
-> = async team => {
+> = async (team) => {
   const { JSDOM } = jsdom;
   const url = team.depthChartUrl;
   const html = await axios.get(url);
   const dom = new JSDOM(html.data);
-  const tablesArray = dom.window.document.querySelectorAll('table tbody');
+  const tablesArray = dom.window.document.querySelectorAll("table tbody");
   tablesArray.forEach((ta, idx) => {
     if (idx % 2 !== 0) {
       let wrSet = 1;
-      const playerRows = ta.querySelectorAll('.Table__TR');
-      playerRows.forEach(pr => {
+      const playerRows = ta.querySelectorAll(".Table__TR");
+      playerRows.forEach((pr) => {
         handleDepthChartRow(pr, team, idx, tablesArray, wrSet);
       });
     }
@@ -33,38 +33,38 @@ export const getTeamDepthChart: (
 
 const handleDepthChartRow: (
   pr: Element,
-  t: Team & {
-    players: Player[];
+  t: ScrapedTeam & {
+    players: ScrapedPlayer[];
   },
   tableIDX: number,
   tablesArray: NodeListOf<Element>,
   wrSet?: number
-) => Team = (pr, t, tableIDX, tablesArray, wrSet) => {
-  const td = pr.querySelectorAll('.Table__TD');
+) => ScrapedTeam = (pr, t, tableIDX, tablesArray, wrSet) => {
+  const td = pr.querySelectorAll(".Table__TD");
   let depth = 0;
-  td.forEach(p => {
-    let pl = p.querySelector('a');
+  td.forEach((p) => {
+    let pl = p.querySelector("a");
     if (pl) {
       const playerUrl = pl.href;
       const playerID = getPlayerID(playerUrl);
       const playerName = pl.textContent;
-      const player = t.players.find(play => {
+      const player = t.players.find((play) => {
         return play.espnPlayerId === playerID;
       });
 
       if (player) {
         const idx = parseInt(
-          pl.parentElement.parentElement.parentElement.dataset.idx ?? ''
+          pl.parentElement.parentElement.parentElement.dataset.idx ?? ""
         );
         const positionTable = tablesArray[tableIDX - 1];
-        const posTableRows = positionTable.querySelectorAll('tr');
+        const posTableRows = positionTable.querySelectorAll("tr");
         const rowDepthPositions = [];
-        posTableRows.forEach(tr => {
+        posTableRows.forEach((tr) => {
           const secondaryPosition = tr
-            .querySelector('.Table__TD')
+            .querySelector(".Table__TD")
             .textContent.trim();
-          const count = rowDepthPositions.filter(r => {
-            const output = r.replace(/[0-9]/g, '');
+          const count = rowDepthPositions.filter((r) => {
+            const output = r.replace(/[0-9]/g, "");
             return output === secondaryPosition;
           }).length;
           if (count > 0) {
@@ -81,18 +81,18 @@ const handleDepthChartRow: (
         });
         depth++;
         const status = p
-          .querySelector('.nfl-injuries-status')
+          .querySelector(".nfl-injuries-status")
           .textContent.trim();
         player.injuryStatus = status as Status;
         if (!player.depth) {
           player.depth = depth;
         }
       } else {
-        const newPlayer: Player = {
+        const newPlayer: ScrapedPlayer = {
           id: undefined,
           teamId: t.id,
           playerImageSrc:
-            'https://a.espncdn.com/combiner/i?img=/i/headshots/nophoto.png',
+            "https://a.espncdn.com/combiner/i?img=/i/headshots/nophoto.png",
           playerUrl: playerUrl,
           name: playerName,
           number: undefined,
@@ -119,17 +119,17 @@ const handleDepthChartRow: (
         };
 
         const idx = parseInt(
-          pl.parentElement.parentElement.parentElement.dataset.idx ?? ''
+          pl.parentElement.parentElement.parentElement.dataset.idx ?? ""
         );
         const positionTable = tablesArray[tableIDX - 1];
-        const posTableRows = positionTable.querySelectorAll('tr');
+        const posTableRows = positionTable.querySelectorAll("tr");
         const rowDepthPositions = [];
-        posTableRows.forEach(tr => {
+        posTableRows.forEach((tr) => {
           const secondaryPosition = tr
-            .querySelector('.Table__TD')
+            .querySelector(".Table__TD")
             .textContent.trim();
           const count = rowDepthPositions.filter(
-            r => r === secondaryPosition
+            (r) => r === secondaryPosition
           ).length;
           if (count > 0) {
             const positionCount = count + 1;
@@ -145,7 +145,7 @@ const handleDepthChartRow: (
         });
         depth++;
         const status = p
-          .querySelector('.nfl-injuries-status')
+          .querySelector(".nfl-injuries-status")
           .textContent.trim();
         newPlayer.injuryStatus = status as Status;
         if (!newPlayer.depth) {

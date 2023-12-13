@@ -10,39 +10,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model League {
-  id           String    @id @default(uuid())
-  teamsListUrl String    @map(name: "teams_list_url")
-  abr          String    @unique
-  teams        Team[]
-  createdAt    DateTime  @default(now()) @map(name: "created_at")
-  updatedAt    DateTime? @map(name: "updated_at")
-  player       Player[]
+model ScrapedLeague {
+  id           String          @id @default(uuid())
+  teamsListUrl String          @map(name: "teams_list_url")
+  abr          String          @unique
+  teams        ScrapedTeam[]
+  createdAt    DateTime        @default(now()) @map(name: "created_at")
+  updatedAt    DateTime?       @map(name: "updated_at")
+  player       ScrapedPlayer[]
 
-  @@map(name: "leagues")
+  @@map(name: "scraped_leagues")
 }
 
-model Team {
-  id            String    @id @default(uuid())
-  league        League    @relation(fields: [leagueId], references: [id])
-  leagueId      String    @map(name: "league_id")
-  depthChartUrl String?   @map(name: "depth_chart_url")
-  rosterUrl     String    @map(name: "roster_url")
-  teamUrl       String    @map(name: "team_url")
+model ScrapedTeam {
+  id            String          @id @default(uuid())
+  league        ScrapedLeague   @relation(fields: [leagueId], references: [id])
+  leagueId      String          @map(name: "league_id")
+  depthChartUrl String?         @map(name: "depth_chart_url")
+  rosterUrl     String          @map(name: "roster_url")
+  teamUrl       String          @map(name: "team_url")
+  scheduleUrl   String          @map(name: "schedule_url")
   city          String?
   name          String?
   abr           String
-  imgSrc        String    @map(name: "img_src")
-  players       Player[]
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  updatedAt     DateTime? @map(name: "updated_at")
+  imgSrc        String          @map(name: "img_src")
+  players       ScrapedPlayer[]
+  createdAt     DateTime        @default(now()) @map(name: "created_at")
+  updatedAt     DateTime?       @map(name: "updated_at")
+  game          ScrapedGame[]
 
-  @@map(name: "teams")
+  @@map(name: "scraped_teams")
 }
 
-model Player {
+model ScrapedPlayer {
   id                  String           @id @default(uuid())
-  team                Team             @relation(fields: [teamId], references: [id])
+  team                ScrapedTeam      @relation(fields: [teamId], references: [id])
   teamId              String           @map(name: "team_id")
   name                String
   injuryStatus        String?          @map(name: "injury_status")
@@ -60,7 +62,7 @@ model Player {
   playerDepthPosition String[]         @map(name: "player_depth_position")
   createdAt           DateTime         @default(now()) @map(name: "created_at")
   updatedAt           DateTime?        @map(name: "updated_at")
-  League              League?          @relation(fields: [leagueId], references: [id])
+  League              ScrapedLeague?   @relation(fields: [leagueId], references: [id])
   leagueId            String?          @map(name: "league_id")
   fantasyProsData     FantasyProsData?
   batting             String?
@@ -72,41 +74,53 @@ model Player {
   espnPlayerId        String?          @map(name: "espn_player_id")
 
   @@unique([leagueId, espnPlayerId, name])
-  @@map(name: "players")
+  @@map(name: "scraped_players")
 }
 
 model FantasyProsData {
-  id                 String    @id @default(uuid())
-  player             Player?   @relation(fields: [playerId], references: [id])
-  playerId           String?   @unique @map(name: "player_id")
+  id                 String         @id @default(uuid())
+  player             ScrapedPlayer? @relation(fields: [playerId], references: [id])
+  playerId           String?        @unique @map(name: "player_id")
   rank               Int
-  playerName         String    @map(name: "player_name")
-  teamAbr            String    @map(name: "team_abr")
+  playerName         String         @map(name: "player_name")
+  teamAbr            String         @map(name: "team_abr")
   pos                String
-  byeWeek            Int?      @map(name: "bye_week")
-  strengthOgSchedule String    @map(name: "strength_of_schedule")
-  avgAdp             String    @map(name: "avg_adp")
+  byeWeek            Int?           @map(name: "bye_week")
+  strengthOgSchedule String         @map(name: "strength_of_schedule")
+  avgAdp             String         @map(name: "avg_adp")
   notes              String
-  avgFanPoints       Float     @map(name: "avg_fan_points")
-  avgPassingYds      Float     @map(name: "avg_passing_yards")
-  avgPassingTds      Float     @map(name: "avg_passing_tds")
-  avgReceivingRec    Float     @map(name: "avg_receiving_rec")
-  avgReceivingYds    Float     @map(name: "avg_receiving_yds")
-  avgReceivingTds    Float     @map(name: "avg_receiving_tds")
-  avgRushingAtt      Float     @map(name: "avg_rushing_att")
-  avgRushingYds      Float     @map(name: "avg_rushing_yds")
-  avgRushingTds      Float     @map(name: "avg_rushing_tds")
-  totalFanPoints     Float     @map(name: "total_fan_points")
-  totalPassingYds    Float     @map(name: "total_passing_yds")
-  totalPassingTds    Float     @map(name: "total_passing_tds")
-  totalReceivingRec  Float     @map(name: "total_receiving_rec")
-  totalReceivingYds  Float     @map(name: "total_receiving_yds")
-  totalReceivingTds  Float     @map(name: "total_receiving_tds")
-  totalRushingAtt    Float     @map(name: "total_rushing_att")
-  totalRushingYds    Float     @map(name: "total_rushing_yds")
-  totalRushingTds    Float     @map(name: "total_rushing_tds")
-  createdAt          DateTime  @default(now()) @map(name: "created_at")
-  updatedAt          DateTime? @map(name: "updated_at")
+  avgFanPoints       Float          @map(name: "avg_fan_points")
+  avgPassingYds      Float          @map(name: "avg_passing_yards")
+  avgPassingTds      Float          @map(name: "avg_passing_tds")
+  avgReceivingRec    Float          @map(name: "avg_receiving_rec")
+  avgReceivingYds    Float          @map(name: "avg_receiving_yds")
+  avgReceivingTds    Float          @map(name: "avg_receiving_tds")
+  avgRushingAtt      Float          @map(name: "avg_rushing_att")
+  avgRushingYds      Float          @map(name: "avg_rushing_yds")
+  avgRushingTds      Float          @map(name: "avg_rushing_tds")
+  totalFanPoints     Float          @map(name: "total_fan_points")
+  totalPassingYds    Float          @map(name: "total_passing_yds")
+  totalPassingTds    Float          @map(name: "total_passing_tds")
+  totalReceivingRec  Float          @map(name: "total_receiving_rec")
+  totalReceivingYds  Float          @map(name: "total_receiving_yds")
+  totalReceivingTds  Float          @map(name: "total_receiving_tds")
+  totalRushingAtt    Float          @map(name: "total_rushing_att")
+  totalRushingYds    Float          @map(name: "total_rushing_yds")
+  totalRushingTds    Float          @map(name: "total_rushing_tds")
+  createdAt          DateTime       @default(now()) @map(name: "created_at")
+  updatedAt          DateTime?      @map(name: "updated_at")
 
   @@map(name: "fantasy_pros_data")
+}
+
+model ScrapedGame {
+  id         String        @id @default(uuid())
+  homeTeamId String        @map(name: "home_team_id")
+  awayTeamId String        @map(name: "away_team_id")
+  createdAt  DateTime      @default(now()) @map(name: "created_at")
+  updatedAt  DateTime?     @map(name: "updated_at")
+  date       DateTime
+  team       ScrapedTeam[]
+
+  @@map(name: "scraped_games")
 }

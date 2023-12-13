@@ -1,6 +1,6 @@
-import { Prisma, PrismaClient, Team } from '@prisma/client';
+import { Prisma, PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient({ log: ['info', 'warn', 'error'] });
+const prisma = new PrismaClient({ log: ["info", "warn", "error"] });
 
 export const createFantasyProsPlayers = async (
   players: Prisma.FantasyProsDataCreateManyInput[]
@@ -16,7 +16,7 @@ export const createFantasyProsPlayers = async (
 export const getFPSPlayersForDraft = async () => {
   const ps = await prisma.fantasyProsData.findMany({
     orderBy: {
-      rank: 'asc',
+      rank: "asc",
     },
     include: {
       player: {

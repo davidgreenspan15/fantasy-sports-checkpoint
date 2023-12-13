@@ -1,11 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const getLeagues = async () => {
-  const leagues = await prisma.league.findMany({
+export const getScrapedLeagues = async () => {
+  const leagues = await prisma.scrapedLeague.findMany({
     orderBy: {
-      createdAt: 'desc',
+      createdAt: "desc",
     },
     include: {
       teams: true,
@@ -14,10 +14,10 @@ export const getLeagues = async () => {
   return leagues;
 };
 
-export const listLeagues = async () => {
-  const leagues = await prisma.league.findMany({
+export const listScrapedLeagues = async () => {
+  const leagues = await prisma.scrapedLeague.findMany({
     orderBy: {
-      createdAt: 'desc',
+      createdAt: "desc",
     },
     include: {
       teams: {
