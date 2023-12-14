@@ -10,6 +10,70 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model League {
+  id           String    @id @default(uuid())
+  espnId       String    @map(name: "espn_id")
+  name         String
+  shortName    String    @map(name: "short_name")
+  abbreviation String
+  slug         String
+  sport        String
+  createdAt    DateTime  @default(now()) @map(name: "created_at")
+  updatedAt    DateTime? @map(name: "updated_at")
+  Team         Team[]
+
+  @@unique([sport, espnId])
+  @@map(name: "leagues")
+}
+
+model Team {
+  id               String      @id @default(uuid())
+  espnId           String      @map(name: "espn_id")
+  uid              String      @unique //Currently most unique attribute for all sports etc
+  league           League      @relation(fields: [leagueId], references: [id])
+  leagueId         String      @map(name: "league_id")
+  name             String
+  abbreviation     String
+  slug             String
+  location         String
+  nickname         String
+  displayName      String      @map(name: "display_name")
+  shortDisplayName String      @map(name: "short_display_name")
+  isActive         Boolean     @map(name: "is_active")
+  createdAt        DateTime    @default(now()) @map(name: "created_at")
+  updatedAt        DateTime?   @map(name: "updated_at")
+  teamGames        TeamGames[]
+
+  @@map(name: "teams")
+}
+
+model TeamGames {
+  id     String  @id @default(uuid())
+  game   Game?   @relation(fields: [gameId], references: [id])
+  team   Team?   @relation(fields: [teamId], references: [id])
+  teamId String?
+  gameId String?
+  isHome Boolean @map(name: "is_home")
+
+  @@index([teamId, gameId])
+  @@map(name: "team_games")
+}
+
+model Game {
+  id        String      @id @default(uuid())
+  espnId    String      @unique @map(name: "espn_id")
+  date      DateTime
+  name      String
+  shortName String      @map(name: "short_name")
+  week      Int?
+  createdAt DateTime    @default(now()) @map(name: "created_at")
+  updatedAt DateTime?   @map(name: "updated_at")
+  teamGames TeamGames[]
+
+  @@map(name: "games")
+}
+
+/////////////////////////////////////
 model ScrapedLeague {
   id           String          @id @default(uuid())
   teamsListUrl String          @map(name: "teams_list_url")

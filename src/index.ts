@@ -6,6 +6,7 @@ import { commonRoutes } from "./routes/common";
 import { csvConversionRoutes } from "./routes/csvConversion";
 import { scrapingRoutes } from "./routes/scraping";
 import logger from "./util/logger";
+import { espnApiV2Routes } from "./routes/espnApiV2";
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use(express.urlencoded({ extended: true })); // for parsing application/x-ww
 commonRoutes(app, logger);
 scrapingRoutes(app, logger);
 csvConversionRoutes(app, logger);
+espnApiV2Routes(app, logger);
 
 app.listen(PORT, () => {
   logger.debug(`app listening at http://localhost:${PORT}`);
