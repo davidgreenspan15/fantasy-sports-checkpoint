@@ -20,31 +20,32 @@ export const todaysBirthday = async () => {
   const twentyFourHoursFrom = +12 * 60 * 60 * 1000;
 
   const d = new Date();
-  const teams = await prisma.scrapedTeam.findMany({
-    select: {
-      id: true,
-      abr: true,
-    },
-  });
-  const players = await prisma.scrapedPlayer.findMany({
+  const players = await prisma.athlete.findMany({
     where: {
-      birthDate: { startsWith: `${d.getMonth() + 1}/${d.getDate()}/` },
+      birthday: { startsWith: `${d.getMonth() + 1}/${d.getDate()}/` },
     },
     select: {
-      name: true,
-      teamId: true,
-      birthDate: true,
-      pos: true,
-      positionGroup: true,
-      playerDepthPosition: true,
-      playerUrl: true,
+      fullName: true,
+      dateOfBirth: true,
+      birthday: true,
+      position: {
+        select: {
+          name: true,
+          abbreviation: true,
+        },
+      },
       team: {
-        select: { league: { select: { abr: true } } },
+        select: {
+          id: true,
+          name: true,
+          abbreviation: true,
+          league: { select: { abbreviation: true } },
+        },
       },
     },
   });
 
-  const games = await prisma.scrapedGame.findMany({
+  const games = await prisma.game.findMany({
     where: {
       AND: [
         {
@@ -60,29 +61,39 @@ export const todaysBirthday = async () => {
       ],
     },
     select: {
-      homeTeamId: true,
-      awayTeamId: true,
       date: true,
+      name: true,
+      week: true,
+      teamGames: {
+        select: {
+          isHome: true,
+          team: {
+            select: {
+              id: true,
+              name: true,
+              abbreviation: true,
+            },
+          },
+        },
+      },
     },
   });
 
-  return players.reduce((ps, player) => {
-    const gameToday = games.find((game) => game.homeTeamId === player.teamId);
-    if (gameToday) {
-      const name = player.name;
-      const p = {};
-      p[name] = {
-        player,
-        game: {
-          homeTeam: teams.find((t) => t.id === gameToday.homeTeamId),
-          awayTeam: teams.find((t) => t.id === gameToday.awayTeamId),
-          date: gameToday.date,
-        },
+  const playerWithBirthdays = players.reduce((ps, player) => {
+    const game = games.find((game) =>
+      game.teamGames.find((tg) => tg.team.id === player.team.id)
+    );
+    if (game) {
+      const name = player.fullName;
+      const p = {
+        ...player,
+        game,
       };
       ps.push(p);
     }
     return ps;
   }, []);
+  return { playerWithBirthdays };
 };
 export const getDraftBoard = async () => {
   const fpsPlayers = await getFPSPlayersForDraft();

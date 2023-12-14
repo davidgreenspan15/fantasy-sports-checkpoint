@@ -11,16 +11,18 @@ datasource db {
 }
 
 model League {
-  id           String    @id @default(uuid())
-  espnId       String    @map(name: "espn_id")
+  id           String     @id @default(uuid())
+  espnId       String     @map(name: "espn_id")
   name         String
-  shortName    String    @map(name: "short_name")
+  shortName    String     @map(name: "short_name")
   abbreviation String
   slug         String
   sport        String
-  createdAt    DateTime  @default(now()) @map(name: "created_at")
-  updatedAt    DateTime? @map(name: "updated_at")
+  createdAt    DateTime   @default(now()) @map(name: "created_at")
+  updatedAt    DateTime?  @map(name: "updated_at")
   team         Team[]
+  Athlete      Athlete[]
+  Position     Position[]
 
   @@unique([sport, espnId])
   @@map(name: "leagues")
@@ -43,8 +45,58 @@ model Team {
   createdAt        DateTime   @default(now()) @map(name: "created_at")
   updatedAt        DateTime?  @map(name: "updated_at")
   teamGames        TeamGame[]
+  athlete          Athlete[]
 
   @@map(name: "teams")
+}
+
+model Athlete {
+  id            String    @id @default(uuid())
+  espnId        String    @map(name: "espn_id")
+  uid           String    @unique
+  guid          String    @unique
+  firstName     String    @map(name: "first_name")
+  lastName      String    @map(name: "last_name")
+  fullName      String    @map(name: "full_name")
+  displayName   String    @map(name: "display_name")
+  shortName     String    @map(name: "short_name")
+  weight        Int?      @map(name: "weight")
+  height        Int?      @map(name: "height")
+  displayHeight String    @map(name: "display_height")
+  age           Int       @map(name: "age")
+  dateOfBirth   DateTime  @map(name: "date_of_birth")
+  birthday      String    @default("1/1/1111") @map(name: "birthday") // Month/Date/Year no extra 0
+  slug          String
+  team          Team?     @relation(fields: [teamId], references: [id])
+  teamId        String?   @map(name: "team_id")
+  position      Position  @relation(fields: [positionId], references: [id])
+  positionId    String
+  league        League    @relation(fields: [leagueId], references: [id])
+  leagueId      String    @map(name: "league_id")
+  number        String?
+  isInjured     Boolean   @map(name: "is_injured")
+  injuryStatus  String?   @map(name: "injury_status")
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime? @map(name: "updated_at")
+
+  @@map(name: "athletes")
+}
+
+model Position {
+  id               String    @id @default(uuid())
+  espnId           String    @map(name: "espn_id")
+  name             String
+  displayName      String    @map(name: "display_name")
+  abbreviation     String
+  parentPositionId String?   @map(name: "parent_position_id")
+  createdAt        DateTime  @default(now()) @map(name: "created_at")
+  updatedAt        DateTime? @map(name: "updated_at")
+  league           League    @relation(fields: [leagueId], references: [id])
+  leagueId         String    @map(name: "league_id")
+  athlete          Athlete[]
+
+  @@unique([espnId, leagueId])
+  @@map(name: "positions")
 }
 
 model TeamGame {

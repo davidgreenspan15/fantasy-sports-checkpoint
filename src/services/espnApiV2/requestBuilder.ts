@@ -35,4 +35,17 @@ export const espnRequestBuilder = {
       throw { ...err, espnApiRequestError: true } as EspnError;
     }
   },
+  buildTeamRosterRequest: async (
+    sport: string,
+    slug: string,
+    teamId: string
+  ) => {
+    const url = `${baseUrl}/${sport}/${slug}/teams/${teamId}/roster`;
+    try {
+      const response = await axios.get<EspnApiV2.TeamRosterResponse>(url);
+      return response.data;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
 };

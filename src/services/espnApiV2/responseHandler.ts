@@ -38,6 +38,33 @@ export const espnResponseHandler = {
     });
     return teamsGames;
   },
+  handleTeamRosterResponse: (
+    rosterResponse: {
+      roster: EspnApiV2.TeamRosterResponse;
+      teamId: string;
+      leagueId: string;
+    }[]
+  ) => {
+    const teamAthletes: Prisma.AthleteCreateInput[] = [];
+    const parentPositions: Prisma.PositionCreateInput[][] = [];
+
+    rosterResponse.forEach((sr) => {
+      sr.roster.athletes.forEach((a) => {
+        a.items.forEach((i) => {
+          const { teamAthlete, positions } = createTeamAthlete(
+            i,
+            sr.teamId,
+            sr.leagueId
+          );
+          teamAthletes.push(teamAthlete);
+          if (positions) {
+            parentPositions.push(positions);
+          }
+        });
+      });
+    });
+    return { teamAthletes, parentPositions: parentPositions.flat() };
+  },
 };
 
 const createTeam: (
@@ -87,5 +114,67 @@ const createTeamGame: (
       },
     },
     team: { connect: { id: teamId } },
+  };
+};
+
+const createTeamAthlete: (
+  athlete: EspnApiV2.ResponseTeamRoster.Item,
+  teamId: string,
+  leagueId: string
+) => {
+  teamAthlete: Prisma.AthleteCreateInput;
+  positions: Prisma.PositionCreateInput[];
+} = (athlete, teamId, leagueId) => {
+  const isInjured = true; //TBD
+  const positions: Prisma.PositionCreateInput[] = [];
+  const parent = athlete.position.parent;
+  const dob = new Date(athlete.dateOfBirth);
+  const teamAthlete = {
+    team: { connect: { id: teamId } },
+    league: { connect: { id: leagueId } },
+    uid: athlete.uid,
+    guid: athlete.guid,
+    espnId: athlete.id,
+    firstName: athlete.firstName,
+    lastName: athlete.lastName,
+    fullName: athlete.fullName,
+    displayName: athlete.displayName,
+    shortName: athlete.shortName,
+    displayHeight: athlete.displayHeight,
+    height: athlete.height,
+    weight: athlete.weight,
+    age: athlete.age,
+    dateOfBirth: dob,
+    birthday: `${dob.getMonth() + 1}/${dob.getDate()}/${dob.getFullYear()}`,
+    slug: athlete.slug,
+    number: athlete.jersey,
+    isInjured: isInjured,
+    injuryStatus: "isInjured",
+    position: {
+      connect: {
+        espnId_leagueId: { espnId: athlete.position.id, leagueId: leagueId },
+      },
+    },
+  };
+
+  positions.push(createPosition(athlete.position, leagueId));
+  if (parent) {
+    positions.push(createPosition(parent, leagueId));
+  }
+
+  return { teamAthlete, positions };
+};
+
+const createPosition: (
+  espnPosition: EspnApiV2.ResponseTeamRoster.Position,
+  leagueId: string
+) => Prisma.PositionCreateInput = (espnPosition, leagueId) => {
+  return {
+    espnId: espnPosition.id,
+    name: espnPosition.name,
+    displayName: espnPosition.displayName,
+    abbreviation: espnPosition.abbreviation,
+    parentPositionId: espnPosition.parent?.id,
+    league: { connect: { id: leagueId } },
   };
 };
