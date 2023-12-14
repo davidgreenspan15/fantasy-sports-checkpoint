@@ -1,8 +1,9 @@
 import { listLeagues } from "../models/leagues";
 import { espnRequestBuilder } from "../services/espnApiV2/requestBuilder";
 import { espnResponseHandler } from "../services/espnApiV2/responseHandler";
-import { upsertTeam } from "../models/teams";
-import { League } from "@prisma/client";
+import { listTeamsWithLeagueSportSlugAndId, upsertTeam } from "../models/teams";
+import { EspnApiV2 } from "../types/EspnApiV2/espnApiV2";
+import { upsertTeamGame } from "../models/teamGames";
 
 export const migrateTeams = async () => {
   // Get Leagues
@@ -21,9 +22,8 @@ export const migrateTeams = async () => {
   );
 
   // Handle Espn Teams
-  const sportsCheckpointTeams = espnResponseHandler.handleSportsTeamsResponse([
-    espnSportsTeams[0],
-  ]);
+  const sportsCheckpointTeams =
+    espnResponseHandler.handleSportsTeamsResponse(espnSportsTeams);
 
   // Save Checkpoint Teams
   return await Promise.all(
@@ -33,32 +33,34 @@ export const migrateTeams = async () => {
   );
 };
 
-export const migratePlayers = async () => {
-  let leagueData: League[] = [];
+export const migrateTeamGames = async () => {
   // Get Leagues
-  leagueData = await listLeagues();
+  const teams = await listTeamsWithLeagueSportSlugAndId();
 
   // Get Espn Teams
-  const espnSportsTeams = await Promise.all(
-    leagueData.map(async (ld) => {
-      const { sport, slug } = ld;
-      const sportsTeams = await espnRequestBuilder.buildSportsTeamsListRequest(
+  const scheduleResponse: {
+    schedule: EspnApiV2.TeamScheduleResponse;
+    teamId: string;
+    leagueId: string;
+  }[] = await Promise.all(
+    [teams[0]].map(async (t) => {
+      const { sport, slug } = t.league;
+      const schedule = await espnRequestBuilder.buildTeamScheduleRequest(
         sport,
-        slug
+        slug,
+        t.espnId
       );
-      return { sports: sportsTeams, leagueId: ld.id };
+      return { schedule, teamId: t.id, leagueId: t.league.id };
     })
   );
-
   // Handle Espn Teams
-  const sportsCheckpointTeams = espnResponseHandler.handleSportsTeamsResponse([
-    espnSportsTeams[0],
-  ]);
+  const sportsCheckpointTeamGames =
+    espnResponseHandler.handleScheduleResponse(scheduleResponse);
 
   // Save Checkpoint Teams
   return await Promise.all(
-    sportsCheckpointTeams.map(async (s) => {
-      return await upsertTeam(s);
+    sportsCheckpointTeamGames.map(async (s) => {
+      return await upsertTeamGame(s);
     })
   );
 };

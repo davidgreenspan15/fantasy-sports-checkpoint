@@ -27,27 +27,27 @@ model League {
 }
 
 model Team {
-  id               String      @id @default(uuid())
-  espnId           String      @map(name: "espn_id")
-  uid              String      @unique //Currently most unique attribute for all sports etc
-  league           League      @relation(fields: [leagueId], references: [id])
-  leagueId         String      @map(name: "league_id")
+  id               String     @id @default(uuid())
+  espnId           String     @map(name: "espn_id")
+  uid              String     @unique //Currently most unique attribute for all sports etc
+  league           League     @relation(fields: [leagueId], references: [id])
+  leagueId         String     @map(name: "league_id")
   name             String
   abbreviation     String
   slug             String
   location         String
   nickname         String
-  displayName      String      @map(name: "display_name")
-  shortDisplayName String      @map(name: "short_display_name")
-  isActive         Boolean     @map(name: "is_active")
-  createdAt        DateTime    @default(now()) @map(name: "created_at")
-  updatedAt        DateTime?   @map(name: "updated_at")
-  teamGames        TeamGames[]
+  displayName      String     @map(name: "display_name")
+  shortDisplayName String     @map(name: "short_display_name")
+  isActive         Boolean    @map(name: "is_active")
+  createdAt        DateTime   @default(now()) @map(name: "created_at")
+  updatedAt        DateTime?  @map(name: "updated_at")
+  teamGames        TeamGame[]
 
   @@map(name: "teams")
 }
 
-model TeamGames {
+model TeamGame {
   id     String  @id @default(uuid())
   game   Game?   @relation(fields: [gameId], references: [id])
   team   Team?   @relation(fields: [teamId], references: [id])
@@ -55,21 +55,23 @@ model TeamGames {
   gameId String?
   isHome Boolean @map(name: "is_home")
 
-  @@index([teamId, gameId])
+  @@unique([teamId, gameId])
   @@map(name: "team_games")
 }
 
 model Game {
-  id        String      @id @default(uuid())
-  espnId    String      @unique @map(name: "espn_id")
+  id        String     @id @default(uuid())
+  espnId    String     @map(name: "espn_id")
   date      DateTime
   name      String
-  shortName String      @map(name: "short_name")
+  shortName String     @map(name: "short_name")
   week      Int?
-  createdAt DateTime    @default(now()) @map(name: "created_at")
-  updatedAt DateTime?   @map(name: "updated_at")
-  teamGames TeamGames[]
+  createdAt DateTime   @default(now()) @map(name: "created_at")
+  updatedAt DateTime?  @map(name: "updated_at")
+  leagueId  String     @map(name: "league_id")
+  teamGames TeamGame[]
 
+  @@unique([leagueId, espnId])
   @@map(name: "games")
 }
 

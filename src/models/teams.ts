@@ -11,3 +11,20 @@ export const upsertTeam = async (team: Prisma.TeamCreateInput) => {
     create: team,
   });
 };
+
+export const listTeamsWithLeagueSportSlugAndId = async () => {
+  return await prisma.team.findMany({
+    select: {
+      espnId: true,
+      id: true,
+      name: true,
+      league: {
+        select: {
+          id: true,
+          sport: true,
+          slug: true,
+        },
+      },
+    },
+  });
+};

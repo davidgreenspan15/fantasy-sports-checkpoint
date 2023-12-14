@@ -13,15 +13,30 @@ export const espnResponseHandler = {
     sportTeamListResponses.forEach((str) => {
       const sport = str.sports.sports[0];
       const league = sport.leagues[0];
-      console.log(sport, league);
 
       return league.teams.forEach((t) => {
         const team = createTeam(t.team, str.leagueId);
         teams.push(team);
       });
     });
-    console.log(teams[0]);
     return teams;
+  },
+  handleScheduleResponse: (
+    scheduleResponse: {
+      schedule: EspnApiV2.TeamScheduleResponse;
+      teamId: string;
+      leagueId: string;
+    }[]
+  ) => {
+    const teamsGames: Prisma.TeamGameCreateInput[] = [];
+    scheduleResponse.forEach((sr) => {
+      const espnTeamId = sr.schedule.team.id;
+      sr.schedule.events.forEach((e) => {
+        const teamGame = createTeamGame(e, sr.teamId, sr.leagueId, espnTeamId);
+        teamsGames.push(teamGame);
+      });
+    });
+    return teamsGames;
   },
 };
 
@@ -41,5 +56,36 @@ const createTeam: (
     location: team.location,
     isActive: team.isActive,
     uid: team.uid,
+  };
+};
+
+const createTeamGame: (
+  event: EspnApiV2.ResponseTeamSchedule.Event,
+  teamId: string,
+  leagueId: string,
+  espnTeamId: string
+) => Prisma.TeamGameCreateInput = (event, teamId, leagueId, espnTeamId) => {
+  const isHome =
+    event.competitions[0].competitors.find((c) => c.id === espnTeamId)
+      ?.homeAway === "home";
+
+  return {
+    isHome,
+    game: {
+      connectOrCreate: {
+        where: {
+          leagueId_espnId: { leagueId: leagueId, espnId: event.id },
+        },
+        create: {
+          espnId: event.id,
+          date: new Date(event.date),
+          name: event.name,
+          shortName: event.shortName,
+          week: event.week.number,
+          leagueId: leagueId,
+        },
+      },
+    },
+    team: { connect: { id: teamId } },
   };
 };
