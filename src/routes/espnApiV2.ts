@@ -9,7 +9,7 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
       const savedTeams = await migrateTeams();
       res.status(200).json({ count: savedTeams.length, savedTeams });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).json(err);
     }
   });
@@ -19,7 +19,7 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
       const savedPlayers = await migratePlayers();
       res.status(200).json({ count: savedPlayers.length, savedPlayers });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).json(err);
     }
   });

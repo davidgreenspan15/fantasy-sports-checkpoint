@@ -1,6 +1,6 @@
 import { listLeagues } from "../models/leagues";
-import { espnRequestBuilder } from "../services/espnRequestBuilder";
-import { espnResponseHandler } from "../services/espnResponseHandler";
+import { espnRequestBuilder } from "../services/espnApiV2/requestBuilder";
+import { espnResponseHandler } from "../services/espnApiV2/responseHandler";
 import { upsertTeam } from "../models/teams";
 import { League } from "@prisma/client";
 

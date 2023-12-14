@@ -6,16 +6,12 @@ const prisma = new PrismaClient();
 export const createScrapedTeams = async (
   teams: Prisma.ScrapedTeamCreateManyInput[]
 ) => {
-  try {
-    const ts = await prisma.scrapedTeam.createMany({
-      data: teams,
-      skipDuplicates: true,
-    });
+  const ts = await prisma.scrapedTeam.createMany({
+    data: teams,
+    skipDuplicates: true,
+  });
 
-    return ts;
-  } catch (err) {
-    logger.error(err);
-  }
+  return ts;
 };
 
 export const updateScrapedTeams = async (

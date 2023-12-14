@@ -1,6 +1,6 @@
 import { League, Prisma, Team } from "@prisma/client";
-import { EspnApiV2 } from "../types/EspnApiV2/espnApiV2";
-import { EspnError, isEspnApiRequestError } from "./espnRequestBuilder";
+import { EspnApiV2 } from "../../types/EspnApiV2/espnApiV2";
+import { EspnError, isEspnApiRequestError } from "./requestBuilder";
 
 export const espnResponseHandler = {
   handleSportsTeamsResponse: (

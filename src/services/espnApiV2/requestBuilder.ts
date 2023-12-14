@@ -1,5 +1,5 @@
 import axios from "axios";
-import { EspnApiV2 } from "../types/EspnApiV2/espnApiV2";
+import { EspnApiV2 } from "../../types/EspnApiV2/espnApiV2";
 
 const baseUrl = "https://site.api.espn.com/apis/site/v2/sports";
 export interface EspnError {

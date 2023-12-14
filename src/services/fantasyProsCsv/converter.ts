@@ -8,93 +8,97 @@ import * as path from "path";
 import * as csv from "fast-csv";
 import logger from "../../util/logger";
 
-export const getFantasyProsDataCSV: (
-  teams: (ScrapedTeam & {
-    players: ScrapedPlayer[];
-  })[]
-) => Promise<FantasyProsData[]> = async (teams) => {
-  const p: FantasyProsData[] = await new Promise((resolve, reject) => {
-    const fpsData = [];
+export const csvConverter = {
+  getFantasyProsDataCSV: async (
+    teams: (ScrapedTeam & {
+      players: ScrapedPlayer[];
+    })[]
+  ) => {
+    const p: FantasyProsData[] = await new Promise((resolve, reject) => {
+      const fpsData = [];
 
-    fs.createReadStream(path.resolve("src", "csvs", "fps", "fps_overview.csv"))
-      .pipe(csv.parse({ headers: true }))
-      .on("error", (error) => logger.error(error))
-      .on("data", (row) => {
-        const player = getOverView(row, teams);
-        if (player) {
-          fpsData.push(player);
-        }
-      })
-      .on("end", (rowCount: number) => {
-        resolve(fpsData);
-      });
-  });
-  await new Promise((resolve, reject) => {
-    const fpsData = [];
-    fs.createReadStream(path.resolve("src", "csvs", "fps", "fps_ranks.csv"))
-      .pipe(csv.parse({ headers: true }))
-      .on("error", (error) => logger.error(error))
-      .on("data", (row) => {
-        const player = getRanks(row, p);
-        if (player) {
-          fpsData.push(player);
-        }
-      })
-      .on("end", (rowCount: number) => {
-        resolve(p);
-      });
-  });
-  await new Promise((resolve, reject) => {
-    const fpsData = [];
-    fs.createReadStream(path.resolve("src", "csvs", "fps", "fps_notes.csv"))
-      .pipe(csv.parse({ headers: true }))
-      .on("error", (error) => logger.error(error))
-      .on("data", (row) => {
-        const player = getNotes(row, p);
-        if (player) {
-          fpsData.push(player);
-        }
-      })
-      .on("end", (rowCount: number) => {
-        resolve(p);
-      });
-  });
-  await new Promise((resolve, reject) => {
-    const fpsData = [];
-    fs.createReadStream(
-      path.resolve("src", "csvs", "fps", "fps_total_stats.csv")
-    )
-      .pipe(csv.parse({ headers: true }))
-      .on("error", (error) => logger.error(error))
-      .on("data", (row) => {
-        const player = geTotalStats(row, p);
-        if (player) {
-          fpsData.push(player);
-        }
-      })
-      .on("end", (rowCount: number) => {
-        resolve(p);
-      });
-  });
-  await new Promise((resolve, reject) => {
-    const fpsData = [];
-    fs.createReadStream(
-      path.resolve("src", "csvs", "fps", "fps_average_stats.csv")
-    )
-      .pipe(csv.parse({ headers: true }))
-      .on("error", (error) => logger.error(error))
-      .on("data", (row) => {
-        const player = getAvgStats(row, p);
-        if (player) {
-          fpsData.push(player);
-        }
-      })
-      .on("end", (rowCount: number) => {
-        resolve(p);
-      });
-  });
+      fs.createReadStream(
+        path.resolve("src", "csvs", "fps", "fps_overview.csv")
+      )
+        .pipe(csv.parse({ headers: true }))
+        .on("error", (error) => logger.error(error))
+        .on("data", (row) => {
+          const player = getOverView(row, teams);
+          if (player) {
+            fpsData.push(player);
+          }
+        })
+        .on("end", (rowCount: number) => {
+          resolve(fpsData);
+        });
+    });
+    await new Promise((resolve, reject) => {
+      const fpsData = [];
+      fs.createReadStream(path.resolve("src", "csvs", "fps", "fps_ranks.csv"))
+        .pipe(csv.parse({ headers: true }))
+        .on("error", (error) => logger.error(error))
+        .on("data", (row) => {
+          const player = getRanks(row, p);
+          if (player) {
+            fpsData.push(player);
+          }
+        })
+        .on("end", (rowCount: number) => {
+          resolve(p);
+        });
+    });
+    await new Promise((resolve, reject) => {
+      const fpsData = [];
+      fs.createReadStream(path.resolve("src", "csvs", "fps", "fps_notes.csv"))
+        .pipe(csv.parse({ headers: true }))
+        .on("error", (error) => logger.error(error))
+        .on("data", (row) => {
+          const player = getNotes(row, p);
+          if (player) {
+            fpsData.push(player);
+          }
+        })
+        .on("end", (rowCount: number) => {
+          resolve(p);
+        });
+    });
+    await new Promise((resolve, reject) => {
+      const fpsData = [];
+      fs.createReadStream(
+        path.resolve("src", "csvs", "fps", "fps_total_stats.csv")
+      )
+        .pipe(csv.parse({ headers: true }))
+        .on("error", (error) => logger.error(error))
+        .on("data", (row) => {
+          const player = geTotalStats(row, p);
+          if (player) {
+            fpsData.push(player);
+          }
+        })
+        .on("end", (rowCount: number) => {
+          resolve(p);
+        });
+    });
+    await new Promise((resolve, reject) => {
+      const fpsData = [];
+      fs.createReadStream(
+        path.resolve("src", "csvs", "fps", "fps_average_stats.csv")
+      )
+        .pipe(csv.parse({ headers: true }))
+        .on("error", (error) => logger.error(error))
+        .on("data", (row) => {
+          const player = getAvgStats(row, p);
+          if (player) {
+            fpsData.push(player);
+          }
+        })
+        .on("end", (rowCount: number) => {
+          resolve(p);
+        });
+    });
 
-  return p;
+    return p;
+  },
 };
 
 const getOverView = (
