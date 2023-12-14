@@ -16,7 +16,7 @@ export const espnRequestBuilder = {
   buildSportsTeamsListRequest: async (sport: string, slug: string) => {
     const url = `${baseUrl}/${sport}/${slug}/teams`;
     try {
-      const response = await axios.get<EspnApiV2.SportTeamsListResponse>(url);
+      const response = await axios.get<EspnApiV2.TeamListResponse>(url);
       return response.data;
     } catch (err) {
       throw { ...err, espnApiRequestError: true } as EspnError;

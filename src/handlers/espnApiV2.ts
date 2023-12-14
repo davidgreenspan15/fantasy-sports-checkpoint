@@ -13,11 +13,11 @@ export const migrateTeams = async () => {
   const espnSportsTeams = await Promise.all(
     leagueData.map(async (ld) => {
       const { sport, slug } = ld;
-      const sportsTeams = await espnRequestBuilder.buildSportsTeamsListRequest(
+      const teamSports = await espnRequestBuilder.buildSportsTeamsListRequest(
         sport,
         slug
       );
-      return { sports: sportsTeams, leagueId: ld.id };
+      return { teamSports, leagueId: ld.id };
     })
   );
 
@@ -34,16 +34,16 @@ export const migrateTeams = async () => {
 };
 
 export const migrateTeamGames = async () => {
-  // Get Leagues
+  // Getting Teams
   const teams = await listTeamsWithLeagueSportSlugAndId();
 
-  // Get Espn Teams
+  // Getting Team Schedules
   const scheduleResponse: {
     schedule: EspnApiV2.TeamScheduleResponse;
     teamId: string;
     leagueId: string;
   }[] = await Promise.all(
-    [teams[0]].map(async (t) => {
+    teams.map(async (t) => {
       const { sport, slug } = t.league;
       const schedule = await espnRequestBuilder.buildTeamScheduleRequest(
         sport,
@@ -53,11 +53,11 @@ export const migrateTeamGames = async () => {
       return { schedule, teamId: t.id, leagueId: t.league.id };
     })
   );
-  // Handle Espn Teams
+  // Handling Team Schedules
   const sportsCheckpointTeamGames =
     espnResponseHandler.handleScheduleResponse(scheduleResponse);
 
-  // Save Checkpoint Teams
+  // Saving Team Games
   return await Promise.all(
     sportsCheckpointTeamGames.map(async (s) => {
       return await upsertTeamGame(s);

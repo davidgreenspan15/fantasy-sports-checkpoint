@@ -1,17 +1,17 @@
-import { League, Prisma, Team } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+
 import { EspnApiV2 } from "../../types/EspnApiV2/espnApiV2";
-import { EspnError, isEspnApiRequestError } from "./requestBuilder";
 
 export const espnResponseHandler = {
   handleSportsTeamsResponse: (
     sportTeamListResponses: {
-      sports: EspnApiV2.SportTeamsListResponse;
+      teamSports: EspnApiV2.TeamListResponse;
       leagueId: string;
     }[]
   ) => {
     const teams: Prisma.TeamCreateInput[] = [];
     sportTeamListResponses.forEach((str) => {
-      const sport = str.sports.sports[0];
+      const sport = str.teamSports.sports[0];
       const league = sport.leagues[0];
 
       return league.teams.forEach((t) => {
@@ -41,7 +41,7 @@ export const espnResponseHandler = {
 };
 
 const createTeam: (
-  team: EspnApiV2.ResponseSportTeamList.TeamTeam,
+  team: EspnApiV2.ResponseTeamList.TeamTeam,
   leagueId: string
 ) => Prisma.TeamCreateInput = (team, leagueId) => {
   return {
