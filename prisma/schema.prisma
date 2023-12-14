@@ -20,7 +20,7 @@ model League {
   sport        String
   createdAt    DateTime  @default(now()) @map(name: "created_at")
   updatedAt    DateTime? @map(name: "updated_at")
-  Team         Team[]
+  team         Team[]
 
   @@unique([sport, espnId])
   @@map(name: "leagues")
