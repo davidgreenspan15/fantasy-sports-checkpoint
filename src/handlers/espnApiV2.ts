@@ -149,11 +149,9 @@ export const migrateDepths = async (logger: Logger) => {
 // Todo
 export const migrateFreeAgentAthletes = async () => {
   // Get Leagues
-  console.log("Getting Leagues");
   const leagueData = await listLeaguesWithAthleteEspnIds(); // Getting athletesUid
 
   // Getting List of Athletes Urls
-  console.log("Getting Athlete Urls");
   const athleteUrlsResponse: {
     athleteUrl: EspnApiV2.LeagueAthleteUrlListResponse[];
   }[] = await Promise.all(
@@ -168,14 +166,12 @@ export const migrateFreeAgentAthletes = async () => {
   );
 
   // Get Filter Athlete Urls
-  console.log("Filtering Athlete Urls");
   const nonSavedAthleteUrls = espnResponseHandler.handleAthleteUrlListResponse(
     athleteUrlsResponse,
     leagueData
   );
 
   // Getting League Athletes
-  console.log("Getting League Athletes");
   const leagueAthleteResponse: {
     athlete: EspnApiV2.LeagueAthleteResponse;
     leagueId: string;
@@ -189,24 +185,21 @@ export const migrateFreeAgentAthletes = async () => {
   );
 
   // Get Free Agent Athletes
-  console.log("Getting Free Agent Athletes");
   const { positions, athletes } =
     espnResponseHandler.handleLeagueAthleteResponse(leagueAthleteResponse);
 
   // Saving Positions
-  console.log("Saving Positions");
   const savedPositions = await Promise.all(
     positions.map(async (s) => {
       return await upsertPositions(s);
     })
   );
   // Saving Team Athletes
-  console.log("Saving Free Agent Athletes");
   const savedAthletes = await Promise.all(
     athletes.map(async (s) => {
       return await upsertLeagueAthletes(s);
     })
   );
-  console.log("Done Saving Free Agent Athletes");
+
   return { savedAthletes, savedPositions };
 };
