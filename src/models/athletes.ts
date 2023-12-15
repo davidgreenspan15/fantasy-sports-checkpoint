@@ -15,6 +15,7 @@ export const upsertAthletes = async (athlete: Prisma.AthleteCreateInput) => {
 export const upsertLeagueAthletes = async (
   athlete: Prisma.AthleteCreateInput
 ) => {
+  //The current team connect id is the espnId to help find team id
   let team = await prisma.team.findUnique({
     where: {
       espnId_leagueId: {
@@ -23,10 +24,11 @@ export const upsertLeagueAthletes = async (
       },
     },
   });
+  // If team is not found, then the athlete is a free agent
   if (team) {
     athlete["team"] = { connect: { id: team.id } };
   } else {
-    delete athlete.team;
+    athlete.team = null;
   }
 
   return await prisma.athlete.upsert({

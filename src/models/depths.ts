@@ -52,7 +52,8 @@ export const upsertDepths = async (
     });
   } catch (e) {
     if (e.code === "P2002") {
-      logger.error("Error", depth, e);
+      //Turn on when running new migration with new db
+      // logger.error("Error", depth, e);
     } else {
       throw e;
     }

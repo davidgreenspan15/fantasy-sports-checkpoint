@@ -138,11 +138,11 @@ export const espnResponseHandler = {
     const positions: Prisma.PositionCreateInput[] = [];
 
     leagueAthleteResponse.forEach((sr) => {
-      const { teamAthlete, position } = createLeagueAthlete(
+      const { leagueAthlete, position } = createLeagueAthlete(
         sr.athlete,
         sr.leagueId
       );
-      athletes.push(teamAthlete);
+      athletes.push(leagueAthlete);
       if (position) {
         positions.push(position);
       }
@@ -211,44 +211,9 @@ const createTeamAthlete: (
   teamAthlete: Prisma.AthleteCreateInput;
   positions: Prisma.PositionCreateInput[];
 } = (athlete, teamId, leagueId) => {
-  const isInjured = athlete.injuries.length > 0; //TBD
   const positions: Prisma.PositionCreateInput[] = [];
   const parent = athlete.position.parent;
-  const dob = new Date(athlete.dateOfBirth);
-  const validDate = isValidDate(dob);
-  const teamAthlete = {
-    team: { connect: { id: teamId } },
-    league: { connect: { id: leagueId } },
-    uid: athlete.uid,
-    guid: athlete.guid,
-    espnId: athlete.id,
-    firstName: athlete.firstName,
-    lastName: athlete.lastName,
-    fullName: athlete.fullName,
-    displayName: athlete.displayName,
-    shortName: athlete.shortName,
-    displayHeight: athlete.displayHeight,
-    height: athlete.height,
-    weight: athlete.weight,
-    age: athlete.age,
-    dateOfBirth: validDate ? dob : null,
-    birthday: validDate
-      ? `${dob.getMonth() + 1}/${dob.getDate()}/${dob.getFullYear()}`
-      : null,
-    espnUrl:
-      athlete.links.find((l) => l.shortText === "Player Card")?.href ?? "",
-    slug: athlete.slug,
-    number: athlete.jersey,
-    isInjured: isInjured,
-    injuryStatus:
-      athlete.injuries.length > 0 ? athlete.injuries[0].status : null,
-    position: {
-      connect: {
-        espnId_leagueId: { espnId: athlete.position.id, leagueId: leagueId },
-      },
-    },
-  };
-
+  const teamAthlete = createAthlete(athlete, teamId, leagueId);
   positions.push(createPosition(athlete.position, leagueId));
   if (parent) {
     positions.push(createPosition(parent, leagueId));
@@ -268,14 +233,30 @@ const createLeagueAthlete: (
   athlete: EspnApiV2.ResponseLeagueAthlete.Athlete,
   leagueId: string
 ) => {
-  teamAthlete: Prisma.AthleteCreateInput;
+  leagueAthlete: Prisma.AthleteCreateInput;
   position: Prisma.PositionCreateInput;
 } = (athlete, leagueId) => {
-  const dob = new Date(athlete.dateOfBirth);
   const teamId = athlete.team?.$ref?.split("/")?.pop()?.split("?")[0];
+  const leagueAthlete = createAthlete(athlete, teamId, leagueId);
+  const position = createPosition(athlete.position, leagueId);
+
+  return { leagueAthlete, position };
+};
+
+const createAthlete: (
+  athlete:
+    | EspnApiV2.ResponseLeagueAthlete.Athlete
+    | EspnApiV2.ResponseTeamRoster.Item,
+  teamId: string,
+  leagueId: string
+) => Prisma.AthleteCreateInput = (athlete, teamId, leagueId) => {
+  const isInjured = athlete["injuries"]?.length > 0;
+
+  const dob = new Date(athlete.dateOfBirth);
   const validDate = isValidDate(dob);
 
-  const teamAthlete = {
+  return {
+    team: { connect: { id: teamId } },
     league: { connect: { id: leagueId } },
     uid: athlete.uid,
     guid: athlete.guid,
@@ -297,21 +278,14 @@ const createLeagueAthlete: (
       athlete.links?.find((l) => l.shortText === "Player Card")?.href ?? "",
     slug: athlete.slug,
     number: athlete.jersey,
-    isInjured: false,
-    injuryStatus: "TBD", //TBD
+    isInjured: isInjured,
+    injuryStatus: isInjured ? athlete["injuries"][0].status : null,
     position: {
       connect: {
         espnId_leagueId: { espnId: athlete.position.id, leagueId: leagueId },
       },
     },
   };
-  if (teamId) {
-    teamAthlete["team"] = { connect: { id: teamId } };
-  }
-
-  const position = createPosition(athlete.position, leagueId);
-
-  return { teamAthlete, position };
 };
 
 const createPosition: (
