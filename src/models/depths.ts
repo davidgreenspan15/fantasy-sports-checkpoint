@@ -41,9 +41,10 @@ export const upsertDepths = async (
   try {
     return await prisma.depth.upsert({
       where: {
-        espnId_leagueId: {
+        espnId_leagueId_depth: {
           espnId: depth.espnId,
           leagueId: depth.league.connect.id,
+          depth: depth.depth,
         },
       },
       update: depth,

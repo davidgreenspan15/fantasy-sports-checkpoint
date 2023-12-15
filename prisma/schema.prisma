@@ -99,7 +99,7 @@ model Depth {
   athletes  Athlete[]
   positions Position[]
 
-  @@unique([espnId, leagueId])
+  @@unique([espnId, leagueId, depth])
   @@map(name: "depths")
 }
 
