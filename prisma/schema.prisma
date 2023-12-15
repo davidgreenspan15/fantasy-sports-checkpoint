@@ -48,6 +48,7 @@ model Team {
   teamGames        TeamGame[]
   athletes         Athlete[]
 
+  @@unique([espnId, leagueId])
   @@map(name: "teams")
 }
 
@@ -63,10 +64,10 @@ model Athlete {
   shortName     String    @map(name: "short_name")
   weight        Int?      @map(name: "weight")
   height        Int?      @map(name: "height")
-  displayHeight String    @map(name: "display_height")
-  age           Int       @map(name: "age")
-  dateOfBirth   DateTime  @map(name: "date_of_birth")
-  birthday      String    @default("1/1/1111") @map(name: "birthday") // Month/Date/Year no extra 0
+  displayHeight String?   @map(name: "display_height")
+  age           Int?      @map(name: "age")
+  dateOfBirth   DateTime? @map(name: "date_of_birth")
+  birthday      String?   @map(name: "birthday") // Month/Date/Year no extra 0
   slug          String
   espnUrl       String    @default("https://www.espn.com") @map(name: "espn_url")
   team          Team?     @relation(fields: [teamId], references: [id])

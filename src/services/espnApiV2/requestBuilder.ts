@@ -62,4 +62,55 @@ export const espnRequestBuilder = {
       throw { ...err, espnApiRequestError: true } as EspnError;
     }
   },
+  buildAthleteUrlListRequest: async (sport: string, slug: string) => {
+    try {
+      let pageCount =
+        await espnRequestBuilder.buildAthleteUrlListPageCountRequest(
+          sport,
+          slug
+        );
+      const pageArray = [];
+      while (pageCount > 0) {
+        pageArray.unshift(pageCount);
+        pageCount--;
+      }
+
+      const athleteUrlListResponse: EspnApiV2.LeagueAthleteUrlListResponse[] =
+        await Promise.all(
+          pageArray.map(async (p) => {
+            const url = `${coreBaseUrl}/${sport}/leagues/${slug}/athletes?limit=1000&active=true&page=${p}`;
+            try {
+              const response =
+                await axios.get<EspnApiV2.LeagueAthleteUrlListResponse>(url);
+              return response.data;
+            } catch (err) {
+              throw { ...err, espnApiRequestError: true } as EspnError;
+            }
+          })
+        );
+      console.log(athleteUrlListResponse.length);
+      return athleteUrlListResponse;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
+  buildAthleteUrlListPageCountRequest: async (sport: string, slug: string) => {
+    const url = `${coreBaseUrl}/${sport}/leagues/${slug}/athletes?limit=1000&active=true&page=1`;
+    try {
+      const response = await axios.get<EspnApiV2.LeagueAthleteUrlListResponse>(
+        url
+      );
+      return response.data.pageCount;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
+  buildLeagueAthleteRequest: async (url: string) => {
+    try {
+      const response = await axios.get<EspnApiV2.LeagueAthleteResponse>(url);
+      return response.data;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
 };

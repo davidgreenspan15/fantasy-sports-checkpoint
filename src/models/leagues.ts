@@ -24,3 +24,17 @@ export const listLeagues = async () => {
 
   return ls;
 };
+
+export const listLeaguesWithAthleteEspnIds = async () => {
+  const ls = await prisma.league.findMany({
+    include: {
+      athletes: {
+        select: {
+          espnId: true,
+        },
+      },
+    },
+  });
+
+  return ls;
+};
