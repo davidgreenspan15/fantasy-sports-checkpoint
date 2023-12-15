@@ -2,12 +2,12 @@ import { Prisma, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const upsertAthletes = async (team: Prisma.AthleteCreateInput) => {
+export const upsertAthletes = async (athlete: Prisma.AthleteCreateInput) => {
   return await prisma.athlete.upsert({
     where: {
-      uid: team.uid,
+      uid: athlete.uid,
     },
-    update: team,
-    create: team,
+    update: athlete,
+    create: athlete,
   });
 };

@@ -5,6 +5,10 @@ export namespace EspnApiV2 {
 
   export type TeamRosterResponse = ResponseTeamRoster.Roster;
 
+  export type LeagueAthleteListResponse = ResponseLeagueAthleteList.Athlete;
+
+  export type TeamDepthChartResponse = ResponseTeamDepthChart.DepthChart;
+
   export namespace ResponseTeamList {
     export interface SportTeam {
       sports: Sport[];
@@ -740,6 +744,61 @@ export namespace EspnApiV2 {
       recordSummary: string;
       seasonSummary: string;
       standingSummary: string;
+    }
+  }
+
+  export namespace ResponseTeamDepthChart {
+    export interface DepthChart {
+      count: number;
+      pageIndex: number;
+      pageSize: number;
+      pageCount: number;
+      items: Item[];
+    }
+
+    export interface Item {
+      id: string;
+      name: string;
+      positions: { [key: string]: PositionValue };
+    }
+
+    export interface PositionValue {
+      position: PositionPosition;
+      athletes: Athlete[];
+    }
+
+    export interface Athlete {
+      slot: number;
+      athlete: Parent;
+      rank: number;
+    }
+
+    export interface Parent {
+      $ref: string;
+    }
+
+    export interface PositionPosition {
+      $ref: string;
+      id: string;
+      name: string;
+      displayName: string;
+      abbreviation: string;
+      leaf: boolean;
+      parent: Parent;
+    }
+  }
+
+  export namespace ResponseLeagueAthleteList {
+    export interface Athlete {
+      count: number;
+      pageIndex: number;
+      pageSize: number;
+      pageCount: number;
+      items: Item[];
+    }
+
+    export interface Item {
+      $ref: string;
     }
   }
 }

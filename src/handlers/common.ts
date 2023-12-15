@@ -28,6 +28,7 @@ export const todaysBirthday = async () => {
       fullName: true,
       dateOfBirth: true,
       birthday: true,
+      espnUrl: true,
       position: {
         select: {
           name: true,
@@ -84,7 +85,6 @@ export const todaysBirthday = async () => {
       game.teamGames.find((tg) => tg.team.id === player.team.id)
     );
     if (game) {
-      const name = player.fullName;
       const p = {
         ...player,
         game,

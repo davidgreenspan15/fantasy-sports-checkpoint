@@ -20,9 +20,10 @@ model League {
   sport        String
   createdAt    DateTime   @default(now()) @map(name: "created_at")
   updatedAt    DateTime?  @map(name: "updated_at")
-  team         Team[]
-  Athlete      Athlete[]
-  Position     Position[]
+  teams        Team[]
+  athletes     Athlete[]
+  positions    Position[]
+  depths       Depth[]
 
   @@unique([sport, espnId])
   @@map(name: "leagues")
@@ -45,7 +46,7 @@ model Team {
   createdAt        DateTime   @default(now()) @map(name: "created_at")
   updatedAt        DateTime?  @map(name: "updated_at")
   teamGames        TeamGame[]
-  athlete          Athlete[]
+  athletes         Athlete[]
 
   @@map(name: "teams")
 }
@@ -67,6 +68,7 @@ model Athlete {
   dateOfBirth   DateTime  @map(name: "date_of_birth")
   birthday      String    @default("1/1/1111") @map(name: "birthday") // Month/Date/Year no extra 0
   slug          String
+  espnUrl       String    @default("https://www.espn.com") @map(name: "espn_url")
   team          Team?     @relation(fields: [teamId], references: [id])
   teamId        String?   @map(name: "team_id")
   position      Position  @relation(fields: [positionId], references: [id])
@@ -78,8 +80,26 @@ model Athlete {
   injuryStatus  String?   @map(name: "injury_status")
   createdAt     DateTime  @default(now()) @map(name: "created_at")
   updatedAt     DateTime? @map(name: "updated_at")
+  depths        Depth[]
 
+  @@unique([espnId, leagueId])
   @@map(name: "athletes")
+}
+
+model Depth {
+  id        String     @id @default(uuid())
+  espnId    String     @map(name: "espn_id")
+  name      String     @map(name: "name")
+  league    League     @relation(fields: [leagueId], references: [id])
+  leagueId  String     @map(name: "league_id")
+  depth     Int
+  createdAt DateTime   @default(now()) @map(name: "created_at")
+  updatedAt DateTime?  @map(name: "updated_at")
+  athletes  Athlete[]
+  positions Position[]
+
+  @@unique([espnId, leagueId])
+  @@map(name: "depths")
 }
 
 model Position {
@@ -93,7 +113,8 @@ model Position {
   updatedAt        DateTime? @map(name: "updated_at")
   league           League    @relation(fields: [leagueId], references: [id])
   leagueId         String    @map(name: "league_id")
-  athlete          Athlete[]
+  athletes         Athlete[]
+  depths           Depth[]
 
   @@unique([espnId, leagueId])
   @@map(name: "positions")

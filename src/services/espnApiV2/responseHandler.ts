@@ -65,6 +65,23 @@ export const espnResponseHandler = {
     });
     return { teamAthletes, parentPositions: parentPositions.flat() };
   },
+  handleTeamDepthResponse: (
+    depthChartResponse: {
+      depths: EspnApiV2.TeamDepthChartResponse;
+      teamId: string;
+      leagueId: string;
+    }[]
+  ) => {
+    const depths: Prisma.DepthCreateInput[][] = [];
+
+    depthChartResponse.forEach((sr) => {
+      sr.depths.items.forEach((i) => {
+        const depth = createDepth(i, sr.leagueId);
+        depths.push(depth);
+      });
+    });
+    return depths.flat();
+  },
 };
 
 const createTeam: (
@@ -146,6 +163,8 @@ const createTeamAthlete: (
     age: athlete.age,
     dateOfBirth: dob,
     birthday: `${dob.getMonth() + 1}/${dob.getDate()}/${dob.getFullYear()}`,
+    espnUrl:
+      athlete.links.find((l) => l.shortText === "Player Card")?.href ?? "",
     slug: athlete.slug,
     number: athlete.jersey,
     isInjured: isInjured,
@@ -177,4 +196,50 @@ const createPosition: (
     parentPositionId: espnPosition.parent?.id,
     league: { connect: { id: leagueId } },
   };
+};
+
+const createDepth: (
+  depthChart: EspnApiV2.ResponseTeamDepthChart.Item,
+  leagueId: string
+) => Prisma.DepthCreateInput[] = (depthChart, leagueId) => {
+  const depths: Prisma.DepthCreateInput[] = [];
+  Object.keys(depthChart.positions).forEach((key) => {
+    const athletes = depthChart.positions[key].athletes;
+    const position = depthChart.positions[key].position;
+    athletes.forEach((a) => {
+      const athleteEspnId = (() => {
+        const splitRef = a.athlete.$ref.split("/");
+        return splitRef[splitRef.length - 1].split("?")[0];
+      })();
+      const depth: Prisma.DepthCreateInput = {
+        espnId: depthChart.id,
+        name: depthChart.name,
+        league: { connect: { id: leagueId } },
+        depth: a.rank,
+        positions: {
+          connectOrCreate: [
+            {
+              where: { id: position.id },
+              create: {
+                espnId: position.id,
+                name: position.name,
+                displayName: position.displayName,
+                abbreviation: position.abbreviation,
+                league: { connect: { id: leagueId } },
+              },
+            },
+          ],
+        },
+        athletes: {
+          connect: [
+            {
+              id: athleteEspnId,
+            },
+          ],
+        },
+      };
+      depths.push(depth);
+    });
+  });
+  return depths;
 };
