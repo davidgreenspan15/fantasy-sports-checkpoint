@@ -122,14 +122,15 @@ model Position {
 }
 
 model TeamGame {
-  id     String  @id @default(uuid())
-  game   Game?   @relation(fields: [gameId], references: [id])
-  team   Team?   @relation(fields: [teamId], references: [id])
-  teamId String? @map(name: "team_id")
-  gameId String? @map(name: "game_id")
-  isHome Boolean @map(name: "is_home")
+  id       String  @id @default(uuid())
+  game     Game?   @relation(fields: [gameId], references: [id])
+  team     Team?   @relation(fields: [teamId], references: [id])
+  teamId   String? @map(name: "team_id")
+  gameId   String? @map(name: "game_id")
+  isHome   Boolean @map(name: "is_home")
+  leagueId String  @map(name: "league_id")
 
-  @@unique([teamId, gameId])
+  @@unique([leagueId, teamId, gameId])
   @@map(name: "team_games")
 }
 

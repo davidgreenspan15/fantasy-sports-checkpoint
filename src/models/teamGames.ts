@@ -20,7 +20,8 @@ export const upsertTeamGame = async (teamGame: Prisma.TeamGameCreateInput) => {
   try {
     return await prisma.teamGame.upsert({
       where: {
-        teamId_gameId: {
+        leagueId_teamId_gameId: {
+          leagueId: teamGame.leagueId,
           teamId: teamGame.team.connect.id,
           gameId: game?.id ?? "",
         },
@@ -31,6 +32,23 @@ export const upsertTeamGame = async (teamGame: Prisma.TeamGameCreateInput) => {
   } catch (e) {
     if (e.code === "P2002") {
       console.log(e);
+      try {
+        return await prisma.teamGame.upsert({
+          where: {
+            leagueId_teamId_gameId: {
+              leagueId: teamGame.leagueId,
+              teamId: teamGame.team.connect.id,
+              gameId: game?.id ?? "",
+            },
+          },
+          update: teamGame,
+          create: teamGame,
+        });
+      } catch (e) {
+        if (e.code === "P2002") {
+          console.log(e);
+        }
+      }
     } else {
       throw e;
     }

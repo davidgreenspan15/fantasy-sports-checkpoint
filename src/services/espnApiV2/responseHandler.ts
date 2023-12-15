@@ -50,7 +50,7 @@ export const espnResponseHandler = {
 
     rosterResponse.forEach((sr) => {
       sr.roster.athletes.forEach((a) => {
-        a.items.forEach((i) => {
+        a.items?.forEach((i) => {
           const { teamAthlete, positions } = createTeamAthlete(
             i,
             sr.teamId,
@@ -193,12 +193,13 @@ const createTeamGame: (
           date: new Date(event.date),
           name: event.name,
           shortName: event.shortName,
-          week: event.week.number,
+          week: event.week?.number ?? null,
           leagueId: leagueId,
         },
       },
     },
     team: { connect: { id: teamId } },
+    leagueId: leagueId,
   };
 };
 

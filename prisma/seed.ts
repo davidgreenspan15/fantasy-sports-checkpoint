@@ -19,7 +19,32 @@ async function main() {
         slug: "nfl",
         sport: "football",
       },
+      {
+        espnId: "46",
+        name: "National Basketball Association",
+        abbreviation: "NBA",
+        shortName: "NBA",
+        slug: "nba",
+        sport: "basketball",
+      },
+      {
+        espnId: "10",
+        name: "Major League Baseball",
+        abbreviation: "MLB",
+        shortName: "MLB",
+        slug: "mlb",
+        sport: "baseball",
+      },
+      {
+        espnId: "90",
+        name: "National Hockey League",
+        abbreviation: "NHL",
+        shortName: "NHL",
+        slug: "nhl",
+        sport: "hockey",
+      },
     ],
+    skipDuplicates: true,
   });
 }
 main()

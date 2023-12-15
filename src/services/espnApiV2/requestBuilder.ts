@@ -88,7 +88,6 @@ export const espnRequestBuilder = {
             }
           })
         );
-      console.log(athleteUrlListResponse.length);
       return athleteUrlListResponse;
     } catch (err) {
       throw { ...err, espnApiRequestError: true } as EspnError;

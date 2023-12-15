@@ -24,7 +24,7 @@ export const upsertLeagueAthletes = async (
     },
   });
   if (team) {
-    athlete.team.connect.id = team.id;
+    athlete["team"] = { connect: { id: team.id } };
   } else {
     delete athlete.team;
   }
