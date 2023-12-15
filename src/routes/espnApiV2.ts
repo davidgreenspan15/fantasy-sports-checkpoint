@@ -13,17 +13,17 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
   //Run Full Migration
   app.get("/migrateAll", async (req, res) => {
     try {
-      console.log("Started Migration");
+      logger.debug("Started Migration");
       const savedTeams = await migrateTeams();
-      console.log("Saved Teams");
+      logger.debug("Saved Teams");
       const teamGames = await migrateTeamGames();
-      console.log("Saved Team Games");
+      logger.debug("Saved Team Games");
       const teamAthletes = await migrateTeamAthletes();
-      console.log("Saved Team Athletes");
+      logger.debug("Saved Team Athletes");
       const freeAgentAthletes = await migrateFreeAgentAthletes();
-      console.log("Saved Free Agent Athletes");
+      logger.debug("Saved Free Agent Athletes");
       const depths = await migrateDepths(logger);
-      console.log("Saved Depths");
+      logger.debug("Saved Depths");
       res.status(200).json({
         savedTeams,
         teamGames,
