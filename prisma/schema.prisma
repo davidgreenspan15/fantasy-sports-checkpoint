@@ -53,35 +53,37 @@ model Team {
 }
 
 model Athlete {
-  id            String    @id @default(uuid())
-  espnId        String    @map(name: "espn_id")
-  uid           String    @unique
-  guid          String    @unique
-  firstName     String    @map(name: "first_name")
-  lastName      String    @map(name: "last_name")
-  fullName      String    @map(name: "full_name")
-  displayName   String    @map(name: "display_name")
-  shortName     String    @map(name: "short_name")
-  weight        Int?      @map(name: "weight")
-  height        Int?      @map(name: "height")
-  displayHeight String?   @map(name: "display_height")
-  age           Int?      @map(name: "age")
-  dateOfBirth   DateTime? @map(name: "date_of_birth")
-  birthday      String?   @map(name: "birthday") // Month/Date/Year no extra 0
+  id            String      @id @default(uuid())
+  espnId        String      @map(name: "espn_id")
+  uid           String      @unique
+  guid          String      @unique
+  firstName     String      @map(name: "first_name")
+  lastName      String      @map(name: "last_name")
+  fullName      String      @map(name: "full_name")
+  displayName   String      @map(name: "display_name")
+  shortName     String      @map(name: "short_name")
+  weight        Int?        @map(name: "weight")
+  height        Int?        @map(name: "height")
+  displayHeight String?     @map(name: "display_height")
+  age           Int?        @map(name: "age")
+  dateOfBirth   DateTime?   @map(name: "date_of_birth")
+  birthday      String?     @map(name: "birthday") // Month/Date/Year no extra 0
   slug          String
-  espnUrl       String    @default("https://www.espn.com") @map(name: "espn_url")
-  team          Team?     @relation(fields: [teamId], references: [id])
-  teamId        String?   @map(name: "team_id")
-  position      Position  @relation(fields: [positionId], references: [id])
+  espnUrl       String      @default("https://www.espn.com") @map(name: "espn_url")
+  team          Team?       @relation(fields: [teamId], references: [id])
+  teamId        String?     @map(name: "team_id")
+  position      Position    @relation(fields: [positionId], references: [id])
   positionId    String
-  league        League    @relation(fields: [leagueId], references: [id])
-  leagueId      String    @map(name: "league_id")
+  league        League      @relation(fields: [leagueId], references: [id])
+  leagueId      String      @map(name: "league_id")
   number        String?
-  isInjured     Boolean   @map(name: "is_injured")
-  injuryStatus  String?   @map(name: "injury_status")
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  updatedAt     DateTime? @map(name: "updated_at")
+  isInjured     Boolean     @map(name: "is_injured")
+  injuryStatus  String?     @map(name: "injury_status")
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  updatedAt     DateTime?   @map(name: "updated_at")
   depths        Depth[]
+  fpsAthlete    FpsAthlete? @relation(fields: [fpsAthleteId], references: [id])
+  fpsAthleteId  String?
 
   @@unique([espnId, leagueId])
   @@map(name: "athletes")
@@ -148,6 +150,95 @@ model Game {
 
   @@unique([leagueId, espnId])
   @@map(name: "games")
+}
+
+model FpsAthlete {
+  id       String @id @default(uuid())
+  name     String @map("player_name")
+  team     String
+  position String
+  byeWeek  Int?   @map("bye_week")
+
+  FpsOverview    FpsOverview?
+  Athlete        Athlete[]
+  FpsAverageStat FpsAverageStat[]
+  FpsTotalStat   FpsTotalStat[]
+  FpsRank        FpsRank[]
+  FpsNote        FpsNote[]
+
+  @@unique([name, team])
+  @@map("fps_athletes")
+}
+
+model FpsAverageStat {
+  id             String     @id @default(uuid())
+  tiers          Int
+  fanPts         Float      @map("fan_pts")
+  yardsPassing   Float      @map("yards_passing")
+  tdsPassing     Float      @map("tds_passing")
+  rec            Int
+  yardsReceiving Float      @map("yards_receiving")
+  tdsReceiving   Float      @map("tds_receiving")
+  att            Int
+  yardsRushing   Float      @map("yards_rushing")
+  tdsRushing     Float      @map("tds_rushing")
+  fpsAthlete     FpsAthlete @relation(fields: [fpsAthleteId], references: [id])
+  fpsAthleteId   String     @unique @map("fps_athlete_id")
+
+  @@map("fps_average_stats")
+}
+
+model FpsTotalStat {
+  id             String     @id @default(uuid())
+  tiers          Int
+  fanPts         Float      @map("fan_pts")
+  yardsPassing   Float      @map("yards_passing")
+  tdsPassing     Float      @map("tds_passing")
+  rec            Int
+  yardsReceiving Float      @map("yards_receiving")
+  tdsReceiving   Float      @map("tds_receiving")
+  att            Int
+  yardsRushing   Float      @map("yards_rushing")
+  tdsRushing     Float      @map("tds_rushing")
+  fpsAthlete     FpsAthlete @relation(fields: [fpsAthleteId], references: [id])
+  fpsAthleteId   String     @unique @map("fps_athlete_id")
+
+  @@map("fps_total_stats")
+}
+
+model FpsRank {
+  id           String     @id @default(uuid())
+  tiers        Int
+  best         Int
+  worst        Int
+  avg          Float
+  stdDev       Float      @map("std_dev")
+  ecrVsAdp     Float      @map("ecr_vs_adp")
+  fpsAthlete   FpsAthlete @relation(fields: [fpsAthleteId], references: [id])
+  fpsAthleteId String     @unique @map("fps_athlete_id")
+
+  @@map("fps_ranks")
+}
+
+model FpsNote {
+  id           String     @id @default(uuid())
+  content      String
+  fpsAthlete   FpsAthlete @relation(fields: [fpsAthleteId], references: [id])
+  fpsAthleteId String     @unique @map("fps_athlete_id")
+
+  @@map("fps_notes")
+}
+
+model FpsOverview {
+  id           String     @id @default(uuid())
+  sos          Float      @map("strength_of_schedule")
+  ecrVsAdp     Float      @map("ecr_vs_adp")
+  avgPts       Float      @map("average_points")
+  pctGames     String     @map("percentage_games")
+  fpsAthlete   FpsAthlete @relation(fields: [fpsAthleteId], references: [id])
+  fpsAthleteId String     @unique @map("fps_athlete_id")
+
+  @@map("fps_overviews")
 }
 
 /////////////////////////////////////

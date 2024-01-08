@@ -23,6 +23,7 @@
     "@types/express": "^4.17.12",
     "@types/jsdom": "^20.0.0",
     "@types/node": "^20.8.6",
+    "@types/puppeteer": "^7.0.4",
     "axios": "^0.21.1",
     "body-parser": "^1.20.0",
     "cors": "^2.8.5",
@@ -38,6 +39,7 @@
     "morgan": "^1.10.0",
     "nodemon": "^2.0.9",
     "prism": "^4.1.2",
+    "puppeteer": "^21.6.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2",
     "winston": "^3.8.1"
