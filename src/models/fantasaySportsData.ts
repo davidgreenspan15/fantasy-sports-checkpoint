@@ -1,6 +1,6 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
-const prisma = new PrismaClient({ log: ["info", "warn", "error"] });
+import { prisma } from "../index";
 
 export const createFantasyProsPlayers = async (
   players: Prisma.FantasyProsDataCreateManyInput[]

@@ -1,6 +1,6 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import { prisma } from "../index";
 
 export const createFpsRank = async (data: Prisma.FpsRankCreateInput) => {
   try {
@@ -14,4 +14,7 @@ export const createFpsRank = async (data: Prisma.FpsRankCreateInput) => {
       throw err;
     }
   }
+};
+export const deleteAllFpsRanks = async () => {
+  return await prisma.fpsRank.deleteMany({});
 };

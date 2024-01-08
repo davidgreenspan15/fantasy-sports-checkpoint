@@ -1,6 +1,6 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import { prisma } from "../index";
 
 export const createScrapedPlayers = async (
   players: Prisma.ScrapedPlayerCreateManyInput[]

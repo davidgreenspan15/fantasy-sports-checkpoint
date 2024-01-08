@@ -1,6 +1,6 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import { prisma } from "../index";
 export const upsertTeamGame = async (teamGame: Prisma.TeamGameCreateInput) => {
   const espnGameId = teamGame.game.connectOrCreate.where.leagueId_espnId.espnId;
   const leagueId = teamGame.game.connectOrCreate.where.leagueId_espnId.leagueId;

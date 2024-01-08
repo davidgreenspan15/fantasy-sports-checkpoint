@@ -4,11 +4,7 @@ import { espnResponseHandler } from "../services/espnApiV2/responseHandler";
 import { listTeamsWithLeagueSportSlugAndId, upsertTeam } from "../models/teams";
 import { EspnApiV2 } from "../types/EspnApiV2/espnApiV2";
 import { upsertTeamGame } from "../models/teamGames";
-import {
-  listAthletesUid,
-  upsertAthletes,
-  upsertLeagueAthletes,
-} from "../models/athletes";
+import { upsertAthletes, upsertLeagueAthletes } from "../models/athletes";
 import { upsertPositions } from "../models/positions";
 import { upsertDepths } from "../models/depths";
 import { Logger } from "winston";

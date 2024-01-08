@@ -1,6 +1,5 @@
-import { Prisma, PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { Prisma } from "@prisma/client";
+import { prisma } from "../index";
 
 export const upsertAthletes = async (athlete: Prisma.AthleteCreateInput) => {
   return await prisma.athlete.upsert({

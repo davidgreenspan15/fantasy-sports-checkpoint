@@ -1,6 +1,6 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import { prisma } from "../index";
 
 export const upsertTeam = async (team: Prisma.TeamCreateInput) => {
   return await prisma.team.upsert({

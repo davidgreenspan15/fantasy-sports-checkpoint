@@ -4,8 +4,7 @@ import { Logger } from "winston";
 
 import { getDraftBoard, resetData, todaysBirthday } from "../handlers/common";
 import { listScrapedLeagues } from "../models/scrapedLeagues";
-
-const prisma = new PrismaClient();
+import { prisma } from "..";
 
 export const commonRoutes = (app: Express, logger: Logger) => {
   app.get("/resetData", async (req, res) => {

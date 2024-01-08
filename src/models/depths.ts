@@ -1,7 +1,6 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { Logger } from "winston";
-
-const prisma = new PrismaClient();
+import { prisma } from "../index";
 
 export const upsertDepths = async (
   depth: Prisma.DepthCreateInput,

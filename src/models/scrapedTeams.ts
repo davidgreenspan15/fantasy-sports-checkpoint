@@ -1,7 +1,7 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import logger from "../util/logger";
 
-const prisma = new PrismaClient();
+import { prisma } from "../index";
 
 export const createScrapedTeams = async (
   teams: Prisma.ScrapedTeamCreateManyInput[]

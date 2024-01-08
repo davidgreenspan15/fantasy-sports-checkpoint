@@ -7,9 +7,13 @@ import { csvConversionRoutes } from "./routes/csvConversion";
 import { scrapingRoutes } from "./routes/scraping";
 import logger from "./util/logger";
 import { espnApiV2Routes } from "./routes/espnApiV2";
+import { PrismaClient } from "@prisma/client";
+
+export const prisma = new PrismaClient({
+  log: ["info", "warn", "error"],
+});
 
 const app = express();
-
 const PORT = process.env.PORT || 8000;
 app.use(function (req, res, next) {
   res.setHeader("Access-Control-Allow-Origin", "*");

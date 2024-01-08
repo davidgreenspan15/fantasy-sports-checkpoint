@@ -1,12 +1,7 @@
-import { Logger } from "winston";
-import { Express } from "express";
-import { PrismaClient } from "@prisma/client";
-import { listScrapedLeagues } from "../models/scrapedLeagues";
+import { prisma } from "..";
 import { getFPSPlayersForDraft } from "../models/fantasaySportsData";
 import { listNflScrapedPlayersWithNoFPSData } from "../models/scrapedPlayers";
 import { mergeValues } from "../util/normalizePlayers";
-
-const prisma = new PrismaClient();
 
 export const resetData = async () => {
   await prisma.fantasyProsData.deleteMany({});

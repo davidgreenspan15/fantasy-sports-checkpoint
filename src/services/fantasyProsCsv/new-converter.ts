@@ -1,7 +1,10 @@
 import { Prisma } from "@prisma/client";
 import fs from "fs";
 import csv from "csv-parser";
-import { createFpsAthletes } from "../../models/fpsAthletes";
+import {
+  createFpsAthletes,
+  deleteAllFpsAthletes,
+} from "../../models/fpsAthletes";
 import {
   FPSAverageStatData,
   FPSData,
@@ -10,11 +13,20 @@ import {
   FPSRankData,
   FPSTotalStatData,
 } from "../../types/fpsData";
-import { createFpsOverview } from "../../models/fpsOverviews";
-import { createFpsNote } from "../../models/fpsNotes";
-import { createFpsRank } from "../../models/fpsRanks";
-import { createFpsTotalStat } from "../../models/fpsTotalStats";
-import { createFpsAverageStat } from "../../models/fpsAverageStats";
+import {
+  createFpsOverview,
+  deleteAllFpsOverviews,
+} from "../../models/fpsOverviews";
+import { createFpsNote, deleteAllFpsNotes } from "../../models/fpsNotes";
+import { createFpsRank, deleteAllFpsRanks } from "../../models/fpsRanks";
+import {
+  createFpsTotalStat,
+  deleteAllFpsTotalStats,
+} from "../../models/fpsTotalStats";
+import {
+  createFpsAverageStat,
+  deleteAllFpsAverageStats,
+} from "../../models/fpsAverageStats";
 const fileCheck = (filePath: string) => {
   if (!fs.existsSync(filePath)) {
     throw new Error(`File does not exist at ${filePath}`);
@@ -244,6 +256,7 @@ export const importCSVData = async (filePath: string, dataType: string) => {
 };
 
 export const importFpsCSVs = async () => {
+  await resetFpsData();
   const athletes = await importCSVData(
     "src/csv/fps/FantasyPros_Draft_Overview.csv",
     "athlete"
@@ -276,4 +289,19 @@ export const importFpsCSVs = async () => {
     totalStats,
     averageStats,
   };
+};
+
+const resetFpsData = async () => {
+  console.log("Deleting all FPS data");
+  await deleteAllFpsAverageStats();
+  console.log("Deleted all FPS Average Stats");
+  await deleteAllFpsTotalStats();
+  console.log("Deleted all FPS Total Stats");
+  await deleteAllFpsNotes();
+  console.log("Deleted all FPS Notes");
+  await deleteAllFpsOverviews();
+  console.log("Deleted all FPS Overviews");
+  await deleteAllFpsRanks();
+  console.log("Deleted all FPS Ranks");
+  await deleteAllFpsAthletes();
 };
