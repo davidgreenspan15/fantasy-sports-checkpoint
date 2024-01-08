@@ -1,12 +1,16 @@
 import { rename } from "fs";
 import path from "path";
 import puppeteer, { Page } from "puppeteer";
-
+import userAgent from "user-agents";
 // Function to download CSV
-export async function downloadCsv() {
+export const downloadFpsCsvs = async () => {
   console.log("Starting CSV download process...");
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({
+    headless: false,
+  });
   const page = await browser.newPage();
+  await page.setUserAgent(userAgent.random().toString());
+
   const client = await page.target().createCDPSession();
 
   // Set the download behavior
@@ -61,12 +65,12 @@ export async function downloadCsv() {
   await clickAndDownload(page, 7, "FantasyPros_Draft_Average_Stats");
 
   console.log("Closing browser");
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(10000);
   await browser.close();
-}
+};
 
 // Function to rename downloaded file
-async function renameDownloadedFile(originalName, newName) {
+const renameDownloadedFile = async (originalName: string, newName: string) => {
   console.log(`Renaming file from ${originalName} to ${newName}`);
   const downloadPath = path.resolve("src/csv/fps");
   const originalFilePath = path.join(downloadPath, originalName);
@@ -76,7 +80,7 @@ async function renameDownloadedFile(originalName, newName) {
   rename(originalFilePath, newFilePath, (err) => {
     if (err) throw err;
   });
-}
+};
 
 // Function to click a button and download a file
 const clickAndDownload = async (page: Page, index: number, name: string) => {

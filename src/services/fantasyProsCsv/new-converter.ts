@@ -1,51 +1,70 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import fs from "fs";
 import csv from "csv-parser";
-
-const prisma = new PrismaClient();
-
+import { createFpsAthletes } from "../../models/fpsAthletes";
+import {
+  FPSAverageStatData,
+  FPSData,
+  FPSNoteData,
+  FPSOverviewData,
+  FPSRankData,
+  FPSTotalStatData,
+} from "../../types/fpsData";
+import { createFpsOverview } from "../../models/fpsOverviews";
+import { createFpsNote } from "../../models/fpsNotes";
+import { createFpsRank } from "../../models/fpsRanks";
+import { createFpsTotalStat } from "../../models/fpsTotalStats";
+import { createFpsAverageStat } from "../../models/fpsAverageStats";
+const fileCheck = (filePath: string) => {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`File does not exist at ${filePath}`);
+  }
+};
 // Function to parse CSV file
-const parseCSV = (filePath) => {
-  const results = [];
+const parseCSV = async (filePath: string) => {
+  const results: FPSData[] = [];
   const statCount = {};
-  return new Promise((resolve, reject) => {
-    fs.createReadStream(filePath)
-      .pipe(
-        csv({
-          mapHeaders: ({ header }) => {
-            let h = header;
-            if (filePath.includes("Stats")) {
-              if (header === "YDS" || header === "TDS") {
-                if (statCount[header]) {
-                  if (statCount[header] === 1) {
-                    h = `REC ${header}`;
-                  }
-                  if (statCount[header] === 2) {
-                    h = `RUSH ${header}`;
-                  }
-                  statCount[header] += 1;
-                } else {
-                  h = `PASS ${header}`;
-                  statCount[header] = 1;
+  fs.createReadStream(filePath)
+    .pipe(
+      csv({
+        mapHeaders: ({ header }) => {
+          let h = header;
+          if (filePath.includes("Stats")) {
+            if (header === "YDS" || header === "TDS") {
+              if (statCount[header]) {
+                if (statCount[header] === 1) {
+                  h = `REC ${header}`;
                 }
+                if (statCount[header] === 2) {
+                  h = `RUSH ${header}`;
+                }
+                statCount[header] += 1;
+              } else {
+                h = `PASS ${header}`;
+                statCount[header] = 1;
               }
-              return h.toLowerCase().split(" ").join("_");
-            } else {
-              return h.toLowerCase().split(" ").join("_");
             }
-          },
-        })
-      )
-      .on("data", (data) => results.push(data))
-      .on("end", () => {
-        resolve(results);
+            return h.toLowerCase().split(" ").join("_");
+          } else {
+            return h.toLowerCase().split(" ").join("_");
+          }
+        },
       })
-      .on("error", reject);
-  });
+    )
+    .on("data", (data) => results.push(data))
+    .on("end", () => {
+      return results;
+    })
+    .on("error", (err) => {
+      console.error(err);
+    });
+  return results;
 };
 
 // Mapping functions for each model
-const mapAthleteData = (csvRow) => {
+const mapAthleteData: (
+  csvRow: FPSOverviewData
+) => Prisma.FpsAthleteCreateManyInput = (csvRow) => {
   return {
     name: csvRow.player_name,
     team: csvRow.team,
@@ -54,45 +73,49 @@ const mapAthleteData = (csvRow) => {
   };
 };
 
-const mapAverageStatData: (csvRow: any) => Prisma.FpsAverageStatCreateInput = (
+const mapAverageStatData: (
+  csvRow: FPSAverageStatData
+) => Prisma.FpsAverageStatCreateInput = (csvRow) => {
+  return {
+    fpsAthlete: {
+      connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
+    },
+    tiers: parseInt(csvRow.tiers),
+    fanPts: parseFloat(csvRow.fan_pts),
+    yardsPassing: parseFloat(csvRow.pass_yds),
+    tdsPassing: parseFloat(csvRow.pass_tds),
+    rec: parseInt(csvRow.rec),
+    yardsReceiving: parseFloat(csvRow.rec_yds),
+    tdsReceiving: parseFloat(csvRow.rec_tds),
+    att: parseInt(csvRow.att),
+    yardsRushing: parseFloat(csvRow.rush_yds),
+    tdsRushing: parseFloat(csvRow.rush_tds),
+  };
+};
+
+const mapTotalStatData: (
+  csvRow: FPSTotalStatData
+) => Prisma.FpsTotalStatCreateInput = (csvRow) => {
+  return {
+    fpsAthlete: {
+      connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
+    },
+    tiers: parseInt(csvRow.tiers),
+    fanPts: parseFloat(csvRow.fan_pts),
+    yardsPassing: parseFloat(csvRow.pass_yds),
+    tdsPassing: parseFloat(csvRow.pass_tds),
+    rec: parseInt(csvRow.rec),
+    yardsReceiving: parseFloat(csvRow.rec_yds),
+    tdsReceiving: parseFloat(csvRow.rec_tds),
+    att: parseInt(csvRow.att),
+    yardsRushing: parseFloat(csvRow.rush_yds),
+    tdsRushing: parseFloat(csvRow.rush_tds),
+  };
+};
+
+const mapRankData: (csvRow: FPSRankData) => Prisma.FpsRankCreateInput = (
   csvRow
 ) => {
-  return {
-    fpsAthlete: {
-      connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
-    },
-    tiers: parseInt(csvRow.tiers),
-    fanPts: parseFloat(csvRow.fan_pts),
-    yardsPassing: parseFloat(csvRow.pass_yds),
-    tdsPassing: parseFloat(csvRow.pass_tds),
-    rec: parseInt(csvRow.rec),
-    yardsReceiving: parseFloat(csvRow.rec_yds),
-    tdsReceiving: parseFloat(csvRow.rec_tds),
-    att: parseInt(csvRow.att),
-    yardsRushing: parseFloat(csvRow.rush_yds),
-    tdsRushing: parseFloat(csvRow.rush_tds),
-  };
-};
-
-const mapTotalStatData = (csvRow) => {
-  return {
-    fpsAthlete: {
-      connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
-    },
-    tiers: parseInt(csvRow.tiers),
-    fanPts: parseFloat(csvRow.fan_pts),
-    yardsPassing: parseFloat(csvRow.pass_yds),
-    tdsPassing: parseFloat(csvRow.pass_tds),
-    rec: parseInt(csvRow.rec),
-    yardsReceiving: parseFloat(csvRow.rec_yds),
-    tdsReceiving: parseFloat(csvRow.rec_tds),
-    att: parseInt(csvRow.att),
-    yardsRushing: parseFloat(csvRow.rush_yds),
-    tdsRushing: parseFloat(csvRow.rush_tds),
-  };
-};
-
-const mapRankData = (csvRow) => {
   return {
     fpsAthlete: {
       connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
@@ -108,7 +131,9 @@ const mapRankData = (csvRow) => {
   };
 };
 
-const mapNoteData = (csvRow) => {
+const mapNoteData: (csvRow: FPSNoteData) => Prisma.FpsNoteCreateInput = (
+  csvRow
+) => {
   return {
     fpsAthlete: {
       connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
@@ -117,9 +142,9 @@ const mapNoteData = (csvRow) => {
   };
 };
 
-const mapOverviewData: (csvRow: any) => Prisma.FpsOverviewCreateInput = (
-  csvRow
-) => {
+const mapOverviewData: (
+  csvRow: FPSOverviewData
+) => Prisma.FpsOverviewCreateInput = (csvRow) => {
   return {
     fpsAthlete: {
       connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
@@ -138,132 +163,76 @@ const mapOverviewData: (csvRow: any) => Prisma.FpsOverviewCreateInput = (
 };
 
 // Insertion functions for each model
-const insertAthletes = async (data) => {
+
+const insertAthletes = async (data: FPSOverviewData[]) => {
   const mappedData = data.map((row) => mapAthleteData(row));
-  return await prisma.fpsAthlete.createMany({
-    data: mappedData,
-    skipDuplicates: true,
-  });
+  return await createFpsAthletes(mappedData);
 };
 
-const insertAverageStats = async (data) => {
+const insertAverageStats = async (data: FPSAverageStatData[]) => {
   const mappedData = data.map((row) => mapAverageStatData(row));
-  const resp = await Promise.all(
+  return await Promise.all(
     mappedData.map(async (row) => {
-      try {
-        return await prisma.fpsAverageStat.create({
-          data: row,
-        });
-      } catch (err) {
-        if (err.code === "P2002" || err.code === "P2014") {
-          console.log(err);
-        } else {
-          throw err;
-        }
-      }
+      return await createFpsAverageStat(row);
     })
   );
-  return resp;
 };
 
-const insertTotalStats = async (data) => {
+const insertTotalStats = async (data: FPSTotalStatData[]) => {
   const mappedData = data.map((row) => mapTotalStatData(row));
-  const resp = await Promise.all(
+  return await Promise.all(
     mappedData.map(async (row) => {
-      try {
-        return await prisma.fpsTotalStat.create({
-          data: row,
-        });
-      } catch (err) {
-        if (err.code === "P2002" || err.code === "P2014") {
-          console.log(err);
-        } else {
-          throw err;
-        }
-      }
+      return await createFpsTotalStat(row);
     })
   );
-  return resp;
 };
 
-const insertRanks = async (data) => {
+const insertRanks = async (data: FPSRankData[]) => {
   const mappedData = data.map((row) => mapRankData(row));
-  const resp = await Promise.all(
+  return await Promise.all(
     mappedData.map(async (row) => {
-      try {
-        return await prisma.fpsRank.create({
-          data: row,
-        });
-      } catch (err) {
-        if (err.code === "P2002" || err.code === "P2014") {
-          console.log(err);
-        } else {
-          throw err;
-        }
-      }
+      return await createFpsRank(row);
     })
   );
-  return resp;
 };
 
-const insertNotes = async (data) => {
+const insertNotes = async (data: FPSNoteData[]) => {
   const mappedData = data.map((row) => mapNoteData(row));
-  const resp = await Promise.all(
+  return await Promise.all(
     mappedData.map(async (row) => {
-      try {
-        return await prisma.fpsNote.create({
-          data: row,
-        });
-      } catch (err) {
-        if (err.code === "P2002" || err.code === "P2014") {
-          console.log(err);
-        } else {
-          throw err;
-        }
-      }
+      return await createFpsNote(row);
     })
   );
-  return resp;
 };
 
-const insertOverviews = async (data) => {
+const insertOverviews = async (data: FPSOverviewData[]) => {
   const mappedData = data.map((row) => mapOverviewData(row));
-
-  const resp = await Promise.all(
+  return await Promise.all(
     mappedData.map(async (row) => {
-      try {
-        return await prisma.fpsOverview.create({
-          data: row,
-        });
-      } catch (err) {
-        if (err.code === "P2002" || err.code === "P2014") {
-          console.log(err);
-        } else {
-          throw err;
-        }
-      }
+      return await createFpsOverview(row);
     })
   );
-  return resp;
 };
 
 // Main function to import CSV data
-export const importCSVData = async (filePath, dataType) => {
+export const importCSVData = async (filePath: string, dataType: string) => {
   try {
+    fileCheck(filePath);
     const data = await parseCSV(filePath);
+    console.log("Data:", data);
     switch (dataType) {
       case "athlete":
-        return await insertAthletes(data);
+        return await insertAthletes(data as FPSOverviewData[]);
       case "averageStat":
-        return await insertAverageStats(data);
+        return await insertAverageStats(data as FPSAverageStatData[]);
       case "totalStat":
-        return await insertTotalStats(data);
+        return await insertTotalStats(data as FPSTotalStatData[]);
       case "rank":
-        return await insertRanks(data);
+        return await insertRanks(data as FPSRankData[]);
       case "note":
-        return await insertNotes(data);
+        return await insertNotes(data as FPSNoteData[]);
       case "overview":
-        return await insertOverviews(data);
+        return await insertOverviews(data as FPSOverviewData[]);
 
       default:
         throw new Error("Invalid data type specified");
@@ -271,4 +240,39 @@ export const importCSVData = async (filePath, dataType) => {
   } catch (error) {
     console.error("Error importing CSV data:", error);
   }
+};
+
+export const importFpsCSVs = async () => {
+  const athletes = await importCSVData(
+    "src/csv/fps/FantasyPros_Draft_Overview.csv",
+    "athlete"
+  );
+  const overview = await importCSVData(
+    "src/csv/fps/FantasyPros_Draft_Overview.csv",
+    "overview"
+  );
+  const ranks = await importCSVData(
+    "src/csv/fps/FantasyPros_Draft_Ranks.csv",
+    "rank"
+  );
+  const notes = await importCSVData(
+    "src/csv/fps/FantasyPros_Draft_Notes.csv",
+    "note"
+  );
+  const totalStats = await importCSVData(
+    "src/csv/fps/FantasyPros_Draft_Total_Stats.csv",
+    "totalStat"
+  );
+  const averageStats = await importCSVData(
+    "src/csv/fps/FantasyPros_Draft_Average_Stats.csv",
+    "averageStat"
+  );
+  return {
+    athletes,
+    overview,
+    ranks,
+    notes,
+    totalStats,
+    averageStats,
+  };
 };
