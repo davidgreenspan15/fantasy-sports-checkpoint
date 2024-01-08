@@ -19,46 +19,46 @@ const fileCheck = (filePath: string) => {
   if (!fs.existsSync(filePath)) {
     throw new Error(`File does not exist at ${filePath}`);
   }
+  return true;
 };
 // Function to parse CSV file
 const parseCSV = async (filePath: string) => {
   const results: FPSData[] = [];
   const statCount = {};
-  fs.createReadStream(filePath)
-    .pipe(
-      csv({
-        mapHeaders: ({ header }) => {
-          let h = header;
-          if (filePath.includes("Stats")) {
-            if (header === "YDS" || header === "TDS") {
-              if (statCount[header]) {
-                if (statCount[header] === 1) {
-                  h = `REC ${header}`;
+  return new Promise<FPSData[]>((resolve, reject) => {
+    fs.createReadStream(filePath)
+      .pipe(
+        csv({
+          mapHeaders: ({ header }) => {
+            let h = header;
+            if (filePath.includes("Stats")) {
+              if (header === "YDS" || header === "TDS") {
+                if (statCount[header]) {
+                  if (statCount[header] === 1) {
+                    h = `REC ${header}`;
+                  }
+                  if (statCount[header] === 2) {
+                    h = `RUSH ${header}`;
+                  }
+                  statCount[header] += 1;
+                } else {
+                  h = `PASS ${header}`;
+                  statCount[header] = 1;
                 }
-                if (statCount[header] === 2) {
-                  h = `RUSH ${header}`;
-                }
-                statCount[header] += 1;
-              } else {
-                h = `PASS ${header}`;
-                statCount[header] = 1;
               }
+              return h.toLowerCase().split(" ").join("_");
+            } else {
+              return h.toLowerCase().split(" ").join("_");
             }
-            return h.toLowerCase().split(" ").join("_");
-          } else {
-            return h.toLowerCase().split(" ").join("_");
-          }
-        },
+          },
+        })
+      )
+      .on("data", (data) => results.push(data as FPSData))
+      .on("end", () => {
+        resolve(results as FPSData[]);
       })
-    )
-    .on("data", (data) => results.push(data))
-    .on("end", () => {
-      return results;
-    })
-    .on("error", (err) => {
-      console.error(err);
-    });
-  return results;
+      .on("error", reject);
+  });
 };
 
 // Mapping functions for each model
@@ -217,7 +217,8 @@ const insertOverviews = async (data: FPSOverviewData[]) => {
 // Main function to import CSV data
 export const importCSVData = async (filePath: string, dataType: string) => {
   try {
-    fileCheck(filePath);
+    const exists = fileCheck(filePath);
+    console.log("Exists:", exists);
     const data = await parseCSV(filePath);
     console.log("Data:", data);
     switch (dataType) {

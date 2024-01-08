@@ -65,7 +65,6 @@ export const downloadFpsCsvs = async () => {
   await clickAndDownload(page, 7, "FantasyPros_Draft_Average_Stats");
 
   console.log("Closing browser");
-  await page.waitForTimeout(10000);
   await browser.close();
 };
 

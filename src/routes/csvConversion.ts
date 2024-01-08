@@ -3,7 +3,7 @@ import { Logger } from "winston";
 
 import { convertFpsData } from "../handlers/csvConversion";
 import { importFpsCSVs } from "../services/fantasyProsCsv/new-converter";
-import { downloadFpsCsvs } from "../services/fantasyProsCsv/csvDownloader";
+import { downloadFpsCsvs } from "../services/fantasyProsCsv/CsvDownloader";
 
 export const csvConversionRoutes = (app: Express, logger: Logger) => {
   app.get("/convertFpsData", async (req, res) => {
