@@ -142,7 +142,6 @@ export const migrateDepths = async (logger: Logger) => {
   return { savedAthletes };
 };
 
-// Todo
 export const migrateFreeAgentAthletes = async () => {
   // Get Leagues
   const leagueData = await listLeaguesWithAthleteEspnIds(); // Getting athletesUid
