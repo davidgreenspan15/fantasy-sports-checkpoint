@@ -11,7 +11,7 @@ export const createFpsOverview = async (
     });
   } catch (err) {
     if (err.code === "P2002" || err.code === "P2014") {
-      console.log(err);
+      // console.log(err);
     } else {
       throw err;
     }

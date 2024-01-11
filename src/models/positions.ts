@@ -16,7 +16,7 @@ export const upsertPositions = async (position: Prisma.PositionCreateInput) => {
     });
   } catch (err) {
     if (err.code === "P2002") {
-      console.log(err);
+      // console.log(err);
     } else {
       throw err;
     }

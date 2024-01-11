@@ -338,7 +338,6 @@ export const handleGameRow: (
   }
   const time = rowColumns[columnsDB["time"]].textContent;
   const opponent = rowColumns[columnsDB["opponent"]].querySelector("a").href;
-  console.log(opponent);
   const date = dateValue.split(", ")[1] + " " + year;
   let [hrMm, amPm] = time.split(" ");
   if (hrMm.split(":").length === 1) {

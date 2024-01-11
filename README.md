@@ -13,6 +13,8 @@ One stop shop for Espn data from all four major sports.
 - Rosters
 - Depth Charts
 - Games
+- Team Statistics
+- Athlete Statistics
 - Team Game Logs
 - Athlete Game Logs
 

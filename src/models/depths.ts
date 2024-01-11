@@ -18,7 +18,7 @@ export const upsertDepths = async (
     },
   });
   if (!positionId) {
-    console.log(depth.Positions.connectOrCreate[0].where.id);
+    // console.log(depth.Positions.connectOrCreate[0].where.id);
   }
   const athleteId = await prisma.athlete.findUnique({
     where: {
