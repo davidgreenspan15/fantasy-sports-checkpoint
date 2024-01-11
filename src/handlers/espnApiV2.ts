@@ -8,6 +8,7 @@ import { upsertAthletes, upsertLeagueAthletes } from "../models/athletes";
 import { upsertPositions } from "../models/positions";
 import { upsertDepths } from "../models/depths";
 import { Logger } from "winston";
+import { prisma } from "..";
 
 export const migrateTeams = async () => {
   // Get Leagues
@@ -48,13 +49,13 @@ export const migrateTeamGames = async () => {
     leagueId: string;
   }[] = await Promise.all(
     teams.map(async (t) => {
-      const { sport, slug } = t.league;
+      const { sport, slug } = t.League;
       const schedule = await espnRequestBuilder.buildTeamScheduleRequest(
         sport,
         slug,
         t.espnId
       );
-      return { schedule, teamId: t.id, leagueId: t.league.id };
+      return { schedule, teamId: t.id, leagueId: t.League.id };
     })
   );
   // Handling Team Schedules
@@ -80,13 +81,13 @@ export const migrateTeamAthletes = async () => {
     leagueId: string;
   }[] = await Promise.all(
     teams.map(async (t) => {
-      const { sport, slug } = t.league;
+      const { sport, slug } = t.League;
       const roster = await espnRequestBuilder.buildTeamRosterRequest(
         sport,
         slug,
         t.espnId
       );
-      return { roster, teamId: t.id, leagueId: t.league.id };
+      return { roster, teamId: t.id, leagueId: t.League.id };
     })
   );
   // Handling Team Roster
@@ -119,13 +120,13 @@ export const migrateDepths = async (logger: Logger) => {
     leagueId: string;
   }[] = await Promise.all(
     teams.map(async (t) => {
-      const { sport, slug } = t.league;
+      const { sport, slug } = t.League;
       const depths = await espnRequestBuilder.buildTeamDepthsRequest(
         sport,
         slug,
         t.espnId
       );
-      return { depths, teamId: t.id, leagueId: t.league.id };
+      return { depths, teamId: t.id, leagueId: t.League.id };
     })
   );
   // Handling Team DepthCharts
@@ -197,4 +198,13 @@ export const migrateFreeAgentAthletes = async () => {
   );
 
   return { savedAthletes, savedPositions };
+};
+
+export const dropEspnData = async () => {
+  await prisma.depth.deleteMany();
+  await prisma.teamGame.deleteMany();
+  await prisma.team.deleteMany();
+  await prisma.game.deleteMany();
+  await prisma.athlete.deleteMany();
+  await prisma.position.deleteMany();
 };

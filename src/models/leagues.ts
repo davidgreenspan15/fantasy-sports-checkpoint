@@ -28,7 +28,7 @@ export const listLeagues = async () => {
 export const listLeaguesWithAthleteEspnIds = async () => {
   const ls = await prisma.league.findMany({
     include: {
-      athletes: {
+      Athletes: {
         select: {
           espnId: true,
         },

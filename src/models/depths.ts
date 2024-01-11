@@ -9,8 +9,8 @@ export const upsertDepths = async (
   const positionId = await prisma.position.findUnique({
     where: {
       espnId_leagueId: {
-        espnId: depth.positions.connectOrCreate[0].where.id,
-        leagueId: depth.league.connect.id,
+        espnId: depth.Positions.connectOrCreate[0].where.id,
+        leagueId: depth.League.connect.id,
       },
     },
     select: {
@@ -18,13 +18,13 @@ export const upsertDepths = async (
     },
   });
   if (!positionId) {
-    console.log(depth.positions.connectOrCreate[0].where.id);
+    console.log(depth.Positions.connectOrCreate[0].where.id);
   }
   const athleteId = await prisma.athlete.findUnique({
     where: {
       espnId_leagueId: {
-        espnId: depth.athletes.connect[0].id,
-        leagueId: depth.league.connect.id,
+        espnId: depth.Athletes.connect[0].id,
+        leagueId: depth.League.connect.id,
       },
     },
     select: {
@@ -32,17 +32,17 @@ export const upsertDepths = async (
     },
   });
   if (!athleteId) {
-    logger.error(depth.athletes.connect[0].id, "missing athlete");
+    logger.error(depth.Athletes.connect[0].id, "missing athlete");
     return;
   }
-  depth.athletes.connect[0].id = athleteId?.id;
-  depth.positions.connectOrCreate[0].where.id = positionId?.id ?? "";
+  depth.Athletes.connect[0].id = athleteId?.id;
+  depth.Positions.connectOrCreate[0].where.id = positionId?.id ?? "";
   try {
     return await prisma.depth.upsert({
       where: {
         espnId_leagueId_depth: {
           espnId: depth.espnId,
-          leagueId: depth.league.connect.id,
+          leagueId: depth.League.connect.id,
           depth: depth.depth,
         },
       },

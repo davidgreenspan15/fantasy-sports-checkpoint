@@ -24,18 +24,18 @@ export const todaysBirthday = async () => {
       dateOfBirth: true,
       birthday: true,
       espnUrl: true,
-      position: {
+      Position: {
         select: {
           name: true,
           abbreviation: true,
         },
       },
-      team: {
+      Team: {
         select: {
           id: true,
           name: true,
           abbreviation: true,
-          league: { select: { abbreviation: true } },
+          League: { select: { abbreviation: true } },
         },
       },
     },
@@ -60,10 +60,10 @@ export const todaysBirthday = async () => {
       date: true,
       name: true,
       week: true,
-      teamGames: {
+      TeamGames: {
         select: {
           isHome: true,
-          team: {
+          Team: {
             select: {
               id: true,
               name: true,
@@ -77,7 +77,7 @@ export const todaysBirthday = async () => {
 
   const playerWithBirthdays = players.reduce((ps, player) => {
     const game = games.find((game) =>
-      game.teamGames.find((tg) => tg.team.id === player.team.id)
+      game.TeamGames.find((tg) => tg.Team.id === player.Team.id)
     );
     if (game) {
       const p = {

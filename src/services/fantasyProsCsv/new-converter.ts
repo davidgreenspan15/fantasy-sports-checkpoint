@@ -89,7 +89,7 @@ const mapAverageStatData: (
   csvRow: FPSAverageStatData
 ) => Prisma.FpsAverageStatCreateInput = (csvRow) => {
   return {
-    fpsAthlete: {
+    FpsAthlete: {
       connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
     },
     tiers: parseInt(csvRow.tiers),
@@ -109,7 +109,7 @@ const mapTotalStatData: (
   csvRow: FPSTotalStatData
 ) => Prisma.FpsTotalStatCreateInput = (csvRow) => {
   return {
-    fpsAthlete: {
+    FpsAthlete: {
       connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
     },
     tiers: parseInt(csvRow.tiers),
@@ -129,7 +129,7 @@ const mapRankData: (csvRow: FPSRankData) => Prisma.FpsRankCreateInput = (
   csvRow
 ) => {
   return {
-    fpsAthlete: {
+    FpsAthlete: {
       connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
     },
     tiers: parseInt(csvRow.tiers),
@@ -147,7 +147,7 @@ const mapNoteData: (csvRow: FPSNoteData) => Prisma.FpsNoteCreateInput = (
   csvRow
 ) => {
   return {
-    fpsAthlete: {
+    FpsAthlete: {
       connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
     },
     content: csvRow.notes,
@@ -158,7 +158,7 @@ const mapOverviewData: (
   csvRow: FPSOverviewData
 ) => Prisma.FpsOverviewCreateInput = (csvRow) => {
   return {
-    fpsAthlete: {
+    FpsAthlete: {
       connect: { name_team: { name: csvRow.player_name, team: csvRow.team } },
     },
     sos: isNaN(parseFloat(csvRow.strength_of_schedule_))
@@ -291,7 +291,7 @@ export const importFpsCSVs = async () => {
   };
 };
 
-const resetFpsData = async () => {
+export const resetFpsData = async () => {
   console.log("Deleting all FPS data");
   await deleteAllFpsAverageStats();
   console.log("Deleted all FPS Average Stats");

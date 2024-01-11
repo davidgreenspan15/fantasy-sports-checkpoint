@@ -18,7 +18,7 @@ export const listTeamsWithLeagueSportSlugAndId = async () => {
       espnId: true,
       id: true,
       name: true,
-      league: {
+      League: {
         select: {
           id: true,
           sport: true,

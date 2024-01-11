@@ -2,6 +2,7 @@ import { Express } from "express";
 import { Logger } from "winston";
 
 import {
+  // dropEspnData,
   migrateDepths,
   migrateFreeAgentAthletes,
   migrateTeamAthletes,
@@ -87,4 +88,13 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
       res.status(500).json(err);
     }
   });
+  // app.get("/dropEspnData", async (req, res) => {
+  //   try {
+  //     const drop = await dropEspnData();
+  //     res.status(200).json({ drop });
+  //   } catch (err) {
+  //     logger.error(err);
+  //     res.status(500).json(err);
+  //   }
+  // });
 };

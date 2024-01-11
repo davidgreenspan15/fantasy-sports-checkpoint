@@ -18,16 +18,16 @@ export const upsertLeagueAthletes = async (
   let team = await prisma.team.findUnique({
     where: {
       espnId_leagueId: {
-        leagueId: athlete.league.connect.id,
-        espnId: athlete?.team?.connect?.id,
+        leagueId: athlete.League.connect.id,
+        espnId: athlete?.Team?.connect?.id,
       },
     },
   });
   // If team is not found, then the athlete is a free agent
   if (team) {
-    athlete["team"] = { connect: { id: team.id } };
+    athlete["Team"] = { connect: { id: team.id } };
   } else {
-    athlete.team = null;
+    athlete.Team = null;
   }
 
   return await prisma.athlete.upsert({

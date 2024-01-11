@@ -8,7 +8,7 @@ export const upsertPositions = async (position: Prisma.PositionCreateInput) => {
       where: {
         espnId_leagueId: {
           espnId: position.espnId,
-          leagueId: position.league.connect.id,
+          leagueId: position.League.connect.id,
         },
       },
       update: position,
