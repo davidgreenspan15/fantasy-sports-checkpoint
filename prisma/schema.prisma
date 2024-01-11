@@ -30,23 +30,24 @@ model League {
 }
 
 model Team {
-  id               String     @id @default(uuid())
-  espnId           String     @map(name: "espn_id")
-  uid              String     @unique //Currently most unique attribute for all sports etc
-  name             String
-  abbreviation     String
-  slug             String
-  location         String
-  nickname         String
-  displayName      String     @map(name: "display_name")
-  shortDisplayName String     @map(name: "short_display_name")
-  isActive         Boolean    @map(name: "is_active")
-  createdAt        DateTime   @default(now()) @map(name: "created_at")
-  updatedAt        DateTime?  @map(name: "updated_at")
-  TeamGames        TeamGame[]
-  Athletes         Athlete[]
-  League           League     @relation(fields: [leagueId], references: [id])
-  leagueId         String     @map(name: "league_id")
+  id                String              @id @default(uuid())
+  espnId            String              @map(name: "espn_id")
+  uid               String              @unique //Currently most unique attribute for all sports etc
+  name              String
+  abbreviation      String
+  slug              String
+  location          String
+  nickname          String
+  displayName       String              @map(name: "display_name")
+  shortDisplayName  String              @map(name: "short_display_name")
+  isActive          Boolean             @map(name: "is_active")
+  createdAt         DateTime            @default(now()) @map(name: "created_at")
+  updatedAt         DateTime?           @map(name: "updated_at")
+  TeamGames         TeamGame[]
+  Athletes          Athlete[]
+  League            League              @relation(fields: [leagueId], references: [id])
+  leagueId          String              @map(name: "league_id")
+  TeamGameStatistic TeamGameStatistic[]
 
   @@unique([espnId, leagueId])
   @@map(name: "teams")
@@ -127,15 +128,13 @@ model Position {
 }
 
 model TeamGame {
-  id                   String                 @id @default(uuid())
-  isHome               Boolean                @map(name: "is_home")
-  leagueId             String                 @map(name: "league_id")
-  TeamStatistics       TeamGameStatistic[]
-  AthleteGameStatistic AthleteGameStatistic[]
-  Game                 Game?                  @relation(fields: [gameId], references: [id])
-  Team                 Team?                  @relation(fields: [teamId], references: [id])
-  teamId               String?                @map(name: "team_id")
-  gameId               String?                @map(name: "game_id")
+  id       String  @id @default(uuid())
+  isHome   Boolean @map(name: "is_home")
+  leagueId String  @map(name: "league_id")
+  Game     Game?   @relation(fields: [gameId], references: [id])
+  Team     Team?   @relation(fields: [teamId], references: [id])
+  teamId   String? @map(name: "team_id")
+  gameId   String? @map(name: "game_id")
 
   @@unique([leagueId, teamId, gameId])
   @@map(name: "team_games")
@@ -151,34 +150,45 @@ model Game {
   leagueId  String     @map(name: "league_id")
   TeamGames TeamGame[]
 
-  createdAt DateTime  @default(now()) @map(name: "created_at")
-  updatedAt DateTime? @map(name: "updated_at")
+  createdAt     DateTime        @default(now()) @map(name: "created_at")
+  updatedAt     DateTime?       @map(name: "updated_at")
+  GameStatistic GameStatistic[]
 
   @@unique([leagueId, espnId])
   @@map(name: "games")
 }
 
-model TeamGameStatistic {
-  id             String        @id @default(uuid())
-  TeamGame       TeamGame      @relation(fields: [teamGameId], references: [id])
-  NflStatistic   NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  teamGameId     String        @map(name: "team_game_id")
-  nflStatisticId String?       @unique @map(name: "nfl_statistic_id")
+model GameStatistic {
+  id                    String                 @id @default(uuid())
+  Game                  Game                   @relation(fields: [gameId], references: [id])
+  gameId                String                 @map(name: "game_id")
+  TeamGameStatistics    TeamGameStatistic[]
+  AthleteGameStatistics AthleteGameStatistic[]
+  createdAt             DateTime               @default(now()) @map(name: "created_at")
+  updatedAt             DateTime?              @map(name: "updated_at")
 
-  createdAt DateTime  @default(now()) @map(name: "created_at")
-  updatedAt DateTime? @map(name: "updated_at")
+  @@map(name: "game_statistics")
+}
+
+model TeamGameStatistic {
+  id              String            @id @default(uuid())
+  GameStatistic   GameStatistic     @relation(fields: [gameStatisticId], references: [id])
+  gameStatisticId String
+  NflStatistic    NflTeamStatistic?
+  Team            Team              @relation(fields: [teamId], references: [id])
+  teamId          String            @map(name: "team_id")
 
   @@map(name: "team_game_statistics")
 }
 
 model AthleteGameStatistic {
-  id             String        @id @default(uuid())
-  TeamGame       TeamGame      @relation(fields: [teamGameId], references: [id])
-  Athlete        Athlete       @relation(fields: [athleteId], references: [id])
-  NflStatistic   NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  teamGameId     String        @map(name: "team_game_id")
-  athleteId      String        @map(name: "athlete_id")
-  nflStatisticId String?       @unique @map(name: "nfl_statistic_id")
+  id              String               @id @default(uuid())
+  Athlete         Athlete              @relation(fields: [athleteId], references: [id])
+  GameStatistic   GameStatistic        @relation(fields: [gameStatisticId], references: [id])
+  NflStatistic    NflAthleteStatistic?
+  gameStatisticId String
+  teamGameId      String               @map(name: "team_game_id")
+  athleteId       String               @map(name: "athlete_id")
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
@@ -186,177 +196,178 @@ model AthleteGameStatistic {
   @@map(name: "athlete_game_statistics")
 }
 
-model NflStatistic {
-  id String @id @default(uuid())
-
-  PassingStatistics      PassingStatistics[]
-  RushingStatistics      RushingStatistics[]
-  ReceivingStatistics    ReceivingStatistics[]
-  FumbleStatistics       FumbleStatistics[]
-  DefensiveStatistics    DefensiveStatistics[]
-  InterceptionStatistics InterceptionStatistics[]
-  KickReturnStatistics   KickReturnStatistics[]
-  PuntReturnStatistics   PuntReturnStatistics[]
-  KickingStatistics      KickingStatistics[]
-  PuntingStatistics      PuntingStatistics[]
-  TeamGameStatistic      TeamGameStatistic?
-  AthleteGameStatistic   AthleteGameStatistic?
-  NflTeamStatistic       NflTeamStatistic?        @relation(fields: [nflTeamStatisticId], references: [id])
-  nflTeamStatisticId     String?                  @unique @map(name: "nfl_team_statistic_id")
+model NflAthleteStatistic {
+  id                       String                 @id @default(uuid())
+  AthleteGameStatistic     AthleteGameStatistic   @relation(fields: [athleteGameStatisticId], references: [id])
+  athleteGameStatisticId   String                 @unique @map(name: "athlete_game_statistic_id")
+  NflTeamStatistic         NflTeamStatistic?
+  PassingStatistics        PassingStatistics      @relation(fields: [passingStatisticsId], references: [id])
+  passingStatisticsId      String                 @unique @map(name: "passing_statistics_id")
+  RushingStatistics        RushingStatistics      @relation(fields: [rushingStatisticsId], references: [id])
+  rushingStatisticsId      String                 @unique @map(name: "rushing_statistics_id")
+  ReceivingStatistics      ReceivingStatistics    @relation(fields: [receivingStatisticsId], references: [id])
+  receivingStatisticsId    String                 @unique @map(name: "receiving_statistics_id")
+  FumbleStatistics         FumbleStatistics       @relation(fields: [fumbleStatisticsId], references: [id])
+  fumbleStatisticsId       String                 @unique @map(name: "fumble_statistics_id")
+  DefensiveStatistics      DefensiveStatistics    @relation(fields: [defensiveStatisticsId], references: [id])
+  defensiveStatisticsId    String                 @unique @map(name: "defensive_statistics_id")
+  InterceptionStatistics   InterceptionStatistics @relation(fields: [interceptionStatisticsId], references: [id])
+  interceptionStatisticsId String                 @unique @map(name: "interception_statistics_id")
+  KickReturnStatistics     KickReturnStatistics   @relation(fields: [kickReturnStatisticsId], references: [id])
+  kickReturnStatisticsId   String                 @unique @map(name: "kick_return_statistics_id")
+  PuntReturnStatistics     PuntReturnStatistics   @relation(fields: [puntReturnStatisticsId], references: [id])
+  puntReturnStatisticsId   String                 @unique @map(name: "punt_return_statistics_id")
+  KickingStatistics        KickingStatistics      @relation(fields: [kickingStatisticsId], references: [id])
+  kickingStatisticsId      String                 @unique @map(name: "kicking_statistics_id")
+  PuntingStatistics        PuntingStatistics      @relation(fields: [puntingStatisticsId], references: [id])
+  puntingStatisticsId      String                 @unique @map(name: "punting_statistics_id")
 
   @@map(name: "nfl_statistics")
 }
 
 model NflTeamStatistic {
-  id                  String         @id @default(uuid())
-  firstDowns          Int            @map(name: "first_downs")
-  firstDownsPassing   Int            @map(name: "first_downs_passing")
-  firstDownsRushing   Int            @map(name: "first_downs_rushing")
-  firstDownsPenalty   Int            @map(name: "first_downs_penalty")
-  thirdDownEff        String         @map(name: "third_down_eff")
-  fourthDownEff       String         @map(name: "fourth_down_eff")
-  totalOffensivePlays Int            @map(name: "total_offensive_plays")
-  totalYards          Int            @map(name: "total_yards")
-  yardsPerPlay        Float          @map(name: "yards_per_play")
-  totalDrives         Int            @map(name: "total_drives")
-  netPassingYards     Int            @map(name: "net_passing_yards")
-  completionsAttempts String         @map(name: "completions_attempts")
-  yardsPerPass        Float          @map(name: "yards_per_pass")
-  interceptions       Int            @map(name: "interceptions")
-  sacks               Int
-  sackYards           Int            @map(name: "sack_yards")
-  rushingAttempts     Int            @map(name: "rushing_attempts")
-  rushingYards        Int            @map(name: "rushing_yards")
-  yardsPerRushAttempt Float          @map(name: "yards_per_rush_attempt")
-  redZoneAttempts     Int            @map(name: "red_zone_attempts")
-  redZoneConversions  Int            @map(name: "red_zone_conversions")
-  totalPenalties      Int            @map(name: "total_penalties")
-  totalPenaltyYards   Int            @map(name: "total_penalty_yards")
-  turnovers           Int
-  fumblesLost         Int            @map(name: "fumbles_lost")
-  interceptionsThrown Int            @map(name: "interceptions_thrown")
-  defensiveTds        Int            @map(name: "defensive_tds")
-  possessionTime      String         @map(name: "possession_time")
-  NflStatistic        NflStatistic[]
+  id                       String              @id @default(uuid())
+  firstDowns               Int                 @map(name: "first_downs")
+  firstDownsPassing        Int                 @map(name: "first_downs_passing")
+  firstDownsRushing        Int                 @map(name: "first_downs_rushing")
+  firstDownsPenalty        Int                 @map(name: "first_downs_penalty")
+  thirdDownEff             String              @map(name: "third_down_eff")
+  fourthDownEff            String              @map(name: "fourth_down_eff")
+  totalOffensivePlays      Int                 @map(name: "total_offensive_plays")
+  totalYards               Int                 @map(name: "total_yards")
+  yardsPerPlay             Float               @map(name: "yards_per_play")
+  totalDrives              Int                 @map(name: "total_drives")
+  netPassingYards          Int                 @map(name: "net_passing_yards")
+  completionsAttempts      String              @map(name: "completions_attempts")
+  yardsPerPass             Float               @map(name: "yards_per_pass")
+  interceptions            Int                 @map(name: "interceptions")
+  sacks                    Int
+  sackYards                Int                 @map(name: "sack_yards")
+  rushingAttempts          Int                 @map(name: "rushing_attempts")
+  rushingYards             Int                 @map(name: "rushing_yards")
+  yardsPerRushAttempt      Float               @map(name: "yards_per_rush_attempt")
+  redZoneAttempts          Int                 @map(name: "red_zone_attempts")
+  redZoneConversions       Int                 @map(name: "red_zone_conversions")
+  totalPenalties           Int                 @map(name: "total_penalties")
+  totalPenaltyYards        Int                 @map(name: "total_penalty_yards")
+  turnovers                Int
+  fumblesLost              Int                 @map(name: "fumbles_lost")
+  interceptionsThrown      Int                 @map(name: "interceptions_thrown")
+  defensiveTds             Int                 @map(name: "defensive_tds")
+  possessionTime           String              @map(name: "possession_time")
+  TeamGameStatistic        TeamGameStatistic   @relation(fields: [teamGameStatisticId], references: [id])
+  teamGameStatisticId      String              @unique @map(name: "team_game_statistic_id")
+  AthleteTotalStatistics   NflAthleteStatistic @relation(fields: [athleteTotalStatisticsId], references: [id])
+  athleteTotalStatisticsId String              @unique @map("athlete_total_statistics_id")
 
   @@map("nfl_team_statistics")
 }
 
 model PassingStatistics {
-  id              String        @id @default(uuid())
-  completions     Int
-  attempts        Int
-  yards           Int
-  yardsPerAttempt Float         @map("yards_per_attempt")
-  touchdowns      Int
-  interceptions   Int
-  sacks           Int
-  sackYardsLost   Int           @map("sack_yards_lost")
-  adjustedRating  Float         @map("adjusted_rating") //adjustedQBR
-  rating          Float         @map("rating") //QBRating
-  NflStatistic    NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  nflStatisticId  String?       @map("nfl_statistic_id")
+  id                  String               @id @default(uuid())
+  completions         Int
+  attempts            Int
+  yards               Int
+  yardsPerAttempt     Float                @map("yards_per_attempt")
+  touchdowns          Int
+  interceptions       Int
+  sacks               Int
+  sackYardsLost       Int                  @map("sack_yards_lost")
+  adjustedRating      Float                @map("adjusted_rating") //adjustedQBR
+  rating              Float                @map("rating") //QBRating
+  NflAthleteStatistic NflAthleteStatistic?
 }
 
 model RushingStatistics {
-  id              String        @id @default(uuid())
-  attempts        Int
-  yards           Int
-  yardsPerAttempt Float         @map("yards_per_attempt")
-  touchdowns      Int
-  longest         Int
-  NflStatistic    NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  nflStatisticId  String?       @map("nfl_statistic_id")
+  id                  String               @id @default(uuid())
+  attempts            Int
+  yards               Int
+  yardsPerAttempt     Float                @map("yards_per_attempt")
+  touchdowns          Int
+  longest             Int
+  NflAthleteStatistic NflAthleteStatistic?
 }
 
 model ReceivingStatistics {
-  id                String        @id @default(uuid())
-  receptions        Int
-  targets           Int
-  yards             Int
-  yardsPerReception Float         @map("yards_per_reception")
-  touchdowns        Int
-  longest           Int
-  NflStatistic      NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  nflStatisticId    String?       @map("nfl_statistic_id")
+  id                  String               @id @default(uuid())
+  receptions          Int
+  targets             Int
+  yards               Int
+  yardsPerReception   Float                @map("yards_per_reception")
+  touchdowns          Int
+  longest             Int
+  NflAthleteStatistic NflAthleteStatistic?
 }
 
 model FumbleStatistics {
-  id             String        @id @default(uuid())
-  fumbles        Int
-  lost           Int
-  recovered      Int
-  NflStatistic   NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  nflStatisticId String?       @map("nfl_statistic_id")
+  id                  String               @id @default(uuid())
+  fumbles             Int
+  lost                Int
+  recovered           Int
+  NflAthleteStatistic NflAthleteStatistic?
 }
 
 model DefensiveStatistics {
-  id             String        @id @default(uuid())
-  totalTackles   Int           @map("total_tackles")
-  soloTackles    Int           @map("solo_tackles")
-  sacks          Float
-  tacklesForLoss Float         @map("tackles_for_loss")
-  passesDefended Int           @map("passes_defended")
-  qbHits         Int           @map("qb_hits")
-  touchdowns     Int
-  NflStatistic   NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  nflStatisticId String?       @map("nfl_statistic_id")
+  id                  String               @id @default(uuid())
+  totalTackles        Int                  @map("total_tackles")
+  soloTackles         Int                  @map("solo_tackles")
+  sacks               Float
+  tacklesForLoss      Float                @map("tackles_for_loss")
+  passesDefended      Int                  @map("passes_defended")
+  qbHits              Int                  @map("qb_hits")
+  touchdowns          Int
+  NflAthleteStatistic NflAthleteStatistic?
 }
 
 model InterceptionStatistics {
-  id             String        @id @default(uuid())
-  interceptions  Int
-  yards          Int
-  touchdowns     Int
-  NflStatistic   NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  nflStatisticId String?       @map("nfl_statistic_id")
+  id                  String               @id @default(uuid())
+  interceptions       Int
+  yards               Int
+  touchdowns          Int
+  NflAthleteStatistic NflAthleteStatistic?
 }
 
 model KickReturnStatistics {
-  id             String        @id @default(uuid())
-  returns        Int
-  yards          Int
-  yardsPerReturn Float         @map("yards_per_return")
-  touchdowns     Int
-  longest        Int
-  NflStatistic   NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  nflStatisticId String?       @map("nfl_statistic_id")
+  id                  String               @id @default(uuid())
+  returns             Int
+  yards               Int
+  yardsPerReturn      Float                @map("yards_per_return")
+  touchdowns          Int
+  longest             Int
+  NflAthleteStatistic NflAthleteStatistic?
 }
 
 model PuntReturnStatistics {
-  id             String        @id @default(uuid())
-  returns        Int
-  yards          Int
-  yardsPerReturn Float         @map("yards_per_return")
-  touchdowns     Int
-  longest        Int
-  NflStatistic   NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  nflStatisticId String?       @map("nfl_statistic_id")
+  id                  String               @id @default(uuid())
+  returns             Int
+  yards               Int
+  yardsPerReturn      Float                @map("yards_per_return")
+  touchdowns          Int
+  longest             Int
+  NflAthleteStatistic NflAthleteStatistic?
 }
 
 model KickingStatistics {
-  id                 String        @id @default(uuid())
-  fieldGoalAttempts  Int           @map("field_goal_attempts")
-  fieldGoalMade      Int           @map("field_goal_made")
-  fieldGoalPct       Float         @map("field_goal_pct")
-  longest            Int
-  extraPointAttempts Int           @map("extra_point_attempts")
-  extraPointMade     Int           @map("extra_point_made")
-  totalPoints        Int           @map("total_points")
-  NflStatistic       NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  nflStatisticId     String?       @map("nfl_statistic_id")
+  id                  String               @id @default(uuid())
+  fieldGoalAttempts   Int                  @map("field_goal_attempts")
+  fieldGoalMade       Int                  @map("field_goal_made")
+  fieldGoalPct        Float                @map("field_goal_pct")
+  longest             Int
+  extraPointAttempts  Int                  @map("extra_point_attempts")
+  extraPointMade      Int                  @map("extra_point_made")
+  totalPoints         Int                  @map("total_points")
+  NflAthleteStatistic NflAthleteStatistic?
 }
 
 model PuntingStatistics {
-  id             String        @id @default(uuid())
-  punts          Int
-  yards          Int
-  yardsPerPunt   Float         @map("yards_per_punt")
-  longest        Int
-  puntsInside20  Int           @map("punts_inside_20")
-  touchbacks     Int
-  NflStatistic   NflStatistic? @relation(fields: [nflStatisticId], references: [id])
-  nflStatisticId String?       @map("nfl_statistic_id")
+  id                  String               @id @default(uuid())
+  punts               Int
+  yards               Int
+  yardsPerPunt        Float                @map("yards_per_punt")
+  longest             Int
+  puntsInside20       Int                  @map("punts_inside_20")
+  touchbacks          Int
+  NflAthleteStatistic NflAthleteStatistic?
 }
 
 model FpsAthlete {
