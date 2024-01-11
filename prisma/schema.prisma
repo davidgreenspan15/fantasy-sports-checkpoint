@@ -18,12 +18,13 @@ model League {
   abbreviation String
   slug         String
   sport        String
-  createdAt    DateTime   @default(now()) @map(name: "created_at")
-  updatedAt    DateTime?  @map(name: "updated_at")
   Teams        Team[]
   Athletes     Athlete[]
   Positions    Position[]
   Depths       Depth[]
+
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime? @map(name: "updated_at")
 
   @@unique([sport, espnId])
   @@map(name: "leagues")
@@ -41,13 +42,14 @@ model Team {
   displayName       String              @map(name: "display_name")
   shortDisplayName  String              @map(name: "short_display_name")
   isActive          Boolean             @map(name: "is_active")
-  createdAt         DateTime            @default(now()) @map(name: "created_at")
-  updatedAt         DateTime?           @map(name: "updated_at")
   TeamGames         TeamGame[]
   Athletes          Athlete[]
+  TeamGameStatistic TeamGameStatistic[]
   League            League              @relation(fields: [leagueId], references: [id])
   leagueId          String              @map(name: "league_id")
-  TeamGameStatistic TeamGameStatistic[]
+
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime? @map(name: "updated_at")
 
   @@unique([espnId, leagueId])
   @@map(name: "teams")
@@ -78,11 +80,11 @@ model Athlete {
   AthleteGameStatistic AthleteGameStatistic[]
   FpsAthlete           FpsAthlete?
   Team                 Team?                  @relation(fields: [teamId], references: [id])
+  teamId               String?                @map(name: "team_id")
   Position             Position               @relation(fields: [positionId], references: [id])
+  positionId           String                 @map(name: "position_id")
   League               League                 @relation(fields: [leagueId], references: [id])
   leagueId             String                 @map(name: "league_id")
-  positionId           String                 @map(name: "position_id")
-  teamId               String?                @map(name: "team_id")
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
@@ -132,27 +134,27 @@ model TeamGame {
   isHome   Boolean @map(name: "is_home")
   leagueId String  @map(name: "league_id")
   Game     Game?   @relation(fields: [gameId], references: [id])
+  gameId   String? @map(name: "game_id")
   Team     Team?   @relation(fields: [teamId], references: [id])
   teamId   String? @map(name: "team_id")
-  gameId   String? @map(name: "game_id")
 
   @@unique([leagueId, teamId, gameId])
   @@map(name: "team_games")
 }
 
 model Game {
-  id        String     @id @default(uuid())
-  espnId    String     @map(name: "espn_id")
-  date      DateTime
-  name      String
-  shortName String     @map(name: "short_name")
-  week      Int?
-  leagueId  String     @map(name: "league_id")
-  TeamGames TeamGame[]
+  id             String          @id @default(uuid())
+  espnId         String          @map(name: "espn_id")
+  date           DateTime
+  name           String
+  shortName      String          @map(name: "short_name")
+  week           Int?
+  leagueId       String          @map(name: "league_id")
+  TeamGames      TeamGame[]
+  GameStatistics GameStatistic[]
 
-  createdAt     DateTime        @default(now()) @map(name: "created_at")
-  updatedAt     DateTime?       @map(name: "updated_at")
-  GameStatistic GameStatistic[]
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime? @map(name: "updated_at")
 
   @@unique([leagueId, espnId])
   @@map(name: "games")
@@ -173,10 +175,10 @@ model GameStatistic {
 model TeamGameStatistic {
   id              String            @id @default(uuid())
   GameStatistic   GameStatistic     @relation(fields: [gameStatisticId], references: [id])
-  gameStatisticId String
-  NflStatistic    NflTeamStatistic?
+  gameStatisticId String            @map(name: "game_statistic_id")
   Team            Team              @relation(fields: [teamId], references: [id])
   teamId          String            @map(name: "team_id")
+  NflStatistic    NflTeamStatistic?
 
   @@map(name: "team_game_statistics")
 }
@@ -184,11 +186,10 @@ model TeamGameStatistic {
 model AthleteGameStatistic {
   id              String               @id @default(uuid())
   Athlete         Athlete              @relation(fields: [athleteId], references: [id])
-  GameStatistic   GameStatistic        @relation(fields: [gameStatisticId], references: [id])
-  NflStatistic    NflAthleteStatistic?
-  gameStatisticId String
-  teamGameId      String               @map(name: "team_game_id")
   athleteId       String               @map(name: "athlete_id")
+  GameStatistic   GameStatistic        @relation(fields: [gameStatisticId], references: [id])
+  gameStatisticId String               @map(name: "game_statistic_id")
+  NflStatistic    NflAthleteStatistic?
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
