@@ -16,11 +16,6 @@ One stop shop for Espn data from all four major sports.
 - Team Game Logs
 - Athlete Game Logs
 
-### Cool Tools using Data
-
-- Todays birthdays
-  - Return a list of players with birthdays and games today
-
 ## Fantasy Pros
 
 ### Access To FPS-Athlete:
@@ -30,3 +25,10 @@ One stop shop for Espn data from all four major sports.
 - Avg-Stats
 - Total-Stats
 - Notes
+
+## Cool Tools using Data
+
+- Todays birthdays
+  - Return a list of players with birthdays and games today
+- Draft Board
+  - Create a draft board with aggregated data from Espn and Fantasy Pros. Get inside notes on players during the draft
