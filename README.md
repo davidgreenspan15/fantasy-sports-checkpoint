@@ -26,9 +26,12 @@ One stop shop for Espn data from all four major sports.
 - Total-Stats
 - Notes
 
-## Cool Tools using Data
+## Cool Tools
 
-- Todays birthdays
-  - Return a list of players with birthdays and games today
-- Draft Board
-  - Create a draft board with aggregated data from Espn and Fantasy Pros. Get inside notes on players during the draft
+#### Todays birthdays
+
+- Return a list of players with birthdays and games today
+
+#### Draft Board
+
+- Create a draft board with aggregated data from Espn and Fantasy Pros. Get inside notes on players during the draft
