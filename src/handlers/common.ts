@@ -36,38 +36,25 @@ export const todaysBirthday = async () => {
           name: true,
           abbreviation: true,
           League: { select: { abbreviation: true } },
-        },
-      },
-    },
-  });
-
-  const games = await prisma.game.findMany({
-    where: {
-      AND: [
-        {
-          date: {
-            gte: new Date(now - twentyFourHoursFrom),
-          },
-        },
-        {
-          date: {
-            lt: new Date(now + twentyFourHoursFrom), // 24 hours later for less than comparison
-          },
-        },
-      ],
-    },
-    select: {
-      date: true,
-      name: true,
-      week: true,
-      TeamGames: {
-        select: {
-          isHome: true,
-          Team: {
+          Games: {
+            where: {
+              AND: [
+                {
+                  date: {
+                    gte: new Date(now - twentyFourHoursFrom),
+                  },
+                },
+                {
+                  date: {
+                    lt: new Date(now + twentyFourHoursFrom), // 24 hours later for less than comparison
+                  },
+                },
+              ],
+            },
             select: {
-              id: true,
+              date: true,
               name: true,
-              abbreviation: true,
+              week: true,
             },
           },
         },
@@ -75,19 +62,30 @@ export const todaysBirthday = async () => {
     },
   });
 
-  const playerWithBirthdays = players.reduce((ps, player) => {
-    const game = games.find((game) =>
-      game.TeamGames.find((tg) => tg.Team.id === player.Team.id)
-    );
-    if (game) {
-      const p = {
-        ...player,
-        game,
-      };
-      ps.push(p);
-    }
-    return ps;
-  }, []);
+  // const games = await prisma.game.findMany({
+  //   where: {
+  //     AND: [
+  //       {
+  //         date: {
+  //           gte: new Date(now - twentyFourHoursFrom),
+  //         },
+  //       },
+  //       {
+  //         date: {
+  //           lt: new Date(now + twentyFourHoursFrom), // 24 hours later for less than comparison
+  //         },
+  //       },
+  //     ],
+  //   },
+  //   select: {
+  //     date: true,
+  //     name: true,
+  //     week: true,
+  //   },
+  // });
+
+  const playerWithBirthdays = players.filter((p) => p.Team.Games.length > 0);
+
   return { playerWithBirthdays };
 };
 export const getDraftBoard = async () => {

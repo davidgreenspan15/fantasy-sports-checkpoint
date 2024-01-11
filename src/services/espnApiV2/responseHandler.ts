@@ -28,15 +28,15 @@ export const espnResponseHandler = {
       leagueId: string;
     }[]
   ) => {
-    const teamsGames: Prisma.TeamGameCreateInput[] = [];
-    scheduleResponse.forEach((sr) => {
-      const espnTeamId = sr.schedule.team.id;
-      sr.schedule.events.forEach((e) => {
-        const teamGame = createTeamGame(e, sr.teamId, sr.leagueId, espnTeamId);
-        teamsGames.push(teamGame);
-      });
+    const games: Prisma.GameCreateInput[] = [];
+    const uniqueGames = mapIdenticalGames(scheduleResponse);
+    uniqueGames.forEach((g) => {
+      const game = createGame(g.event, g.homeTeamId, g.leagueId, g.awayTeamId);
+      games.push(game);
     });
-    return teamsGames;
+    // Connect Identical Games
+
+    return games;
   },
   handleTeamRosterResponse: (
     rosterResponse: {
@@ -171,35 +171,23 @@ const createTeam: (
   };
 };
 
-const createTeamGame: (
+const createGame: (
   event: EspnApiV2.ResponseTeamSchedule.Event,
-  teamId: string,
+  homeTeamId: string,
   leagueId: string,
-  espnTeamId: string
-) => Prisma.TeamGameCreateInput = (event, teamId, leagueId, espnTeamId) => {
-  const isHome =
-    event.competitions[0].competitors.find((c) => c.id === espnTeamId)
-      ?.homeAway === "home";
-
+  awayTeamId: string
+) => Prisma.GameCreateInput = (event, homeTeamId, leagueId, awayTeamId) => {
   return {
-    isHome,
-    Game: {
-      connectOrCreate: {
-        where: {
-          leagueId_espnId: { leagueId: leagueId, espnId: event.id },
-        },
-        create: {
-          espnId: event.id,
-          date: new Date(event.date),
-          name: event.name,
-          shortName: event.shortName,
-          week: event.week?.number ?? null,
-          leagueId: leagueId,
-        },
-      },
-    },
-    Team: { connect: { id: teamId } },
+    espnId: event.id,
+    date: new Date(event.date),
+    name: event.name,
+    shortName: event.shortName,
+    week: event.week?.number ?? null,
+    isComplete: event.competitions?.[0]?.status?.type?.completed ?? false,
+    awayTeamId,
+    homeTeamId,
     leagueId: leagueId,
+    Teams: { connect: [{ id: homeTeamId }, { id: awayTeamId }] },
   };
 };
 
@@ -348,4 +336,65 @@ const createDepth: (
     });
   });
   return depths;
+};
+
+const mapIdenticalGames: (
+  scheduleResponses: {
+    schedule: EspnApiV2.TeamScheduleResponse;
+    teamId: string;
+    leagueId: string;
+  }[]
+) => {
+  awayTeamId?: string;
+  homeTeamId?: string;
+  event: EspnApiV2.ResponseTeamSchedule.Event;
+  leagueId: string;
+}[] = (scheduleResponse) => {
+  const gameHash: Record<
+    string,
+    {
+      awayTeamId?: string;
+      homeTeamId?: string;
+      event: EspnApiV2.ResponseTeamSchedule.Event;
+      leagueId: string;
+    }
+  > = {};
+  scheduleResponse.forEach((sr) => {
+    return sr.schedule.events.forEach((e) => {
+      if (gameHash[`${e.id}_${sr.leagueId}`]) {
+        const value = gameHash[`${e.id}_${sr.leagueId}`];
+        if (value.awayTeamId) {
+          gameHash[`${e.id}_${sr.leagueId}`] = {
+            ...gameHash[`${e.id}_${sr.leagueId}`],
+            homeTeamId: sr.teamId,
+          };
+        } else if (value.homeTeamId) {
+          gameHash[`${e.id}_${sr.leagueId}`] = {
+            ...gameHash[`${e.id}_${sr.leagueId}`],
+            awayTeamId: sr.teamId,
+          };
+        }
+      } else {
+        const isHome =
+          e.competitions[0].competitors.find((c) => c.id === sr.teamId)
+            ?.homeAway === "home";
+        if (isHome) {
+          gameHash[`${e.id}_${sr.leagueId}`] = {
+            homeTeamId: sr.teamId,
+            awayTeamId: undefined,
+            leagueId: sr.leagueId,
+            event: e,
+          };
+        } else {
+          gameHash[`${e.id}_${sr.leagueId}`] = {
+            awayTeamId: sr.teamId,
+            homeTeamId: undefined,
+            leagueId: sr.leagueId,
+            event: e,
+          };
+        }
+      }
+    });
+  });
+  return Object.values(gameHash).map((g) => g);
 };

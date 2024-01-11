@@ -3,7 +3,7 @@ import { espnRequestBuilder } from "../services/espnApiV2/requestBuilder";
 import { espnResponseHandler } from "../services/espnApiV2/responseHandler";
 import { listTeamsWithLeagueSportSlugAndId, upsertTeam } from "../models/teams";
 import { EspnApiV2 } from "../types/EspnApiV2/espnApiV2";
-import { upsertTeamGame } from "../models/teamGames";
+import { upsertTeamGame } from "../models/games";
 import { upsertAthletes, upsertLeagueAthletes } from "../models/athletes";
 import { upsertPositions } from "../models/positions";
 import { upsertDepths } from "../models/depths";
@@ -38,7 +38,7 @@ export const migrateTeams = async () => {
   );
 };
 
-export const migrateTeamGames = async () => {
+export const migrateGames = async () => {
   // Getting Teams
   const teams = await listTeamsWithLeagueSportSlugAndId();
 
@@ -202,7 +202,7 @@ export const migrateFreeAgentAthletes = async () => {
 
 export const dropEspnData = async () => {
   await prisma.depth.deleteMany();
-  await prisma.teamGame.deleteMany();
+  // await prisma.teamGame.deleteMany();
   await prisma.team.deleteMany();
   await prisma.game.deleteMany();
   await prisma.athlete.deleteMany();

@@ -2,11 +2,11 @@ import { Express } from "express";
 import { Logger } from "winston";
 
 import {
-  // dropEspnData,
+  dropEspnData,
   migrateDepths,
   migrateFreeAgentAthletes,
   migrateTeamAthletes,
-  migrateTeamGames,
+  migrateGames,
   migrateTeams,
 } from "../handlers/espnApiV2";
 
@@ -17,7 +17,7 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
       logger.debug("Started Migration");
       const savedTeams = await migrateTeams();
       logger.debug("Saved Teams");
-      const teamGames = await migrateTeamGames();
+      const teamGames = await migrateGames();
       logger.debug("Saved Team Games");
       const teamAthletes = await migrateTeamAthletes();
       logger.debug("Saved Team Athletes");
@@ -49,9 +49,9 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
     }
   });
   // Migrates All Team Games and Games
-  app.get("/migrateTeamGames", async (req, res) => {
+  app.get("/migrateGames", async (req, res) => {
     try {
-      const teamGames = await migrateTeamGames();
+      const teamGames = await migrateGames();
       res.status(200).json(teamGames);
     } catch (err) {
       logger.error(err);
@@ -88,13 +88,13 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
       res.status(500).json(err);
     }
   });
-  // app.get("/dropEspnData", async (req, res) => {
-  //   try {
-  //     const drop = await dropEspnData();
-  //     res.status(200).json({ drop });
-  //   } catch (err) {
-  //     logger.error(err);
-  //     res.status(500).json(err);
-  //   }
-  // });
+  app.get("/dropEspnData", async (req, res) => {
+    try {
+      const drop = await dropEspnData();
+      res.status(200).json({ drop });
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json(err);
+    }
+  });
 };
