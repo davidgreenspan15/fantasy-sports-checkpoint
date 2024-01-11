@@ -62,29 +62,15 @@ export const todaysBirthday = async () => {
     },
   });
 
-  // const games = await prisma.game.findMany({
-  //   where: {
-  //     AND: [
-  //       {
-  //         date: {
-  //           gte: new Date(now - twentyFourHoursFrom),
-  //         },
-  //       },
-  //       {
-  //         date: {
-  //           lt: new Date(now + twentyFourHoursFrom), // 24 hours later for less than comparison
-  //         },
-  //       },
-  //     ],
-  //   },
-  //   select: {
-  //     date: true,
-  //     name: true,
-  //     week: true,
-  //   },
-  // });
-
-  const playerWithBirthdays = players.filter((p) => p.Team.Games.length > 0);
+  const playerWithBirthdays = players
+    .filter((p) => p.Team.Games.length > 0)
+    .map((p) => {
+      p.Team.Games.map((g) => {
+        g["Formatted Dated"] = g.date.toLocaleString();
+        return g;
+      });
+      return p;
+    });
 
   return { playerWithBirthdays };
 };

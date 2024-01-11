@@ -1,12 +1,32 @@
-# fantasy-sports-checkpoint
+# Sports Checkpoint
 
-fantasy-sports-checkpoint between yahoo api and fantasy-dash-api
+One stop shop for Espn data from all four major sports.
 
-## Pre-Req to Run Fantasy Sports Checkpoint
+- Fantasy Pros Data scraped for Draft Prep
 
-Todo
+## Espn
 
-## Run Fantasy Sports Checkpoint
+### Access To Espn:
 
-1. Run `yarn`
-2. Run `yarn serve`
+- Athletes
+- Teams
+- Rosters
+- Depth Charts
+- Games
+- Team Game Logs
+- Athlete Game Logs
+
+### Cool Tools using Data
+
+- Todays birthdays
+  - Return a list of players with birthdays and games today
+
+## Fantasy Pros
+
+### Access To FPS-Athlete:
+
+- Overviews
+- Ranks
+- Avg-Stats
+- Total-Stats
+- Notes
