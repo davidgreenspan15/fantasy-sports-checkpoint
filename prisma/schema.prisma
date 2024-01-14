@@ -27,8 +27,8 @@ model Season {
   name       String //Preseason, Regular, Postseason, Offseason
   type       Int // 1=Preseaons ,2=Regular,3=Postseason,4=Offseason
   Games      Game[]
-  Year       Year?     @relation(fields: [yearNumber], references: [year])
-  yearNumber Int?      @map(name: "year_number")
+  Year       Year      @relation(fields: [yearNumber], references: [year])
+  yearNumber Int       @map(name: "year_number")
   createdAt  DateTime  @default(now()) @map(name: "created_at")
   updatedAt  DateTime? @map(name: "updated_at")
 
@@ -168,15 +168,15 @@ model Game {
   awayTeamId String         @map(name: "away_team_id")
   Statistics GameStatistic?
   Teams      Team[]
-  Season     Season?        @relation(fields: [seasonId], references: [id])
-  seasonId   String?        @map(name: "season_id")
+  Season     Season         @relation(fields: [seasonId], references: [id])
+  seasonId   String         @map(name: "season_id")
   League     League         @relation(fields: [leagueId], references: [id])
   leagueId   String         @map(name: "league_id")
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
 
-  @@unique([espnId, leagueId])
+  @@unique([espnId, leagueId]) // As of now i do not think the games id are unique to a season or league but have league for now
   @@map(name: "games")
 }
 
