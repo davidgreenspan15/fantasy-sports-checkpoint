@@ -5,8 +5,8 @@ export const upsertTeamGame = async (game: Prisma.GameCreateInput) => {
   try {
     return await prisma.game.upsert({
       where: {
-        leagueId_espnId: {
-          leagueId: game.leagueId,
+        espnId_leagueId: {
+          leagueId: game.League.connect.id,
           espnId: game.espnId,
         },
       },
@@ -18,8 +18,8 @@ export const upsertTeamGame = async (game: Prisma.GameCreateInput) => {
       try {
         return await prisma.game.upsert({
           where: {
-            leagueId_espnId: {
-              leagueId: game.leagueId,
+            espnId_leagueId: {
+              leagueId: game.League.connect.id,
               espnId: game.espnId,
             },
           },
@@ -35,4 +35,26 @@ export const upsertTeamGame = async (game: Prisma.GameCreateInput) => {
       throw e;
     }
   }
+};
+
+export const listAllNflGames = async () => {
+  return await prisma.game.findMany({
+    where: {
+      League: {
+        slug: "nfl",
+      },
+    },
+    select: {
+      id: true,
+      espnId: true,
+      League: {
+        select: {
+          slug: true,
+          sport: true,
+          id: true,
+        },
+      },
+      Teams: { select: { espnId: true, id: true } },
+    },
+  });
 };

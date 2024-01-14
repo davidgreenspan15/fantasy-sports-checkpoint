@@ -3,7 +3,7 @@ import { espnRequestBuilder } from "../services/espnApiV2/requestBuilder";
 import { espnResponseHandler } from "../services/espnApiV2/responseHandler";
 import { listTeamsWithLeagueSportSlugAndId, upsertTeam } from "../models/teams";
 import { EspnApiV2 } from "../types/EspnApiV2/espnApiV2";
-import { upsertTeamGame } from "../models/games";
+import { listAllNflGames, upsertTeamGame } from "../models/games";
 import { upsertAthletes, upsertLeagueAthletes } from "../models/athletes";
 import { upsertPositions } from "../models/positions";
 import { upsertDepths } from "../models/depths";
@@ -198,6 +198,42 @@ export const migrateFreeAgentAthletes = async () => {
   );
 
   return { savedAthletes, savedPositions };
+};
+
+// Currently Just NFL
+export const migrateGameStatistics = async (logger: Logger) => {
+  // Getting Games
+  const games = await listAllNflGames();
+  // Get Game Summary
+  const gameSummaryResponse: {
+    gameSummary: EspnApiV2.GameSummaryResponse;
+    game: {
+      id: string;
+      espnId: string;
+      Teams: {
+        id: string;
+        espnId: string;
+      }[];
+      League: {
+        id: string;
+        slug: string;
+        sport: string;
+      };
+    };
+  }[] = await Promise.all(
+    games.map(async (g) => {
+      const gameSummary = await espnRequestBuilder.buildGameSummaryRequest(
+        g.League.sport,
+        g.League.slug,
+        g.espnId
+      );
+      return { gameSummary, game: g };
+    })
+  );
+  // Handle Game Summary
+  const gameStatistics =
+    espnResponseHandler.handleGameSummaryResponse(gameSummaryResponse);
+  // Save Game Statistics
 };
 
 export const dropEspnData = async () => {

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import { EspnApiV2 } from "../../types/EspnApiV2/espnApiV2";
+import { create } from "domain";
 
 export const espnResponseHandler = {
   handleSportsTeamsResponse: (
@@ -31,7 +32,13 @@ export const espnResponseHandler = {
     const games: Prisma.GameCreateInput[] = [];
     const uniqueGames = mapIdenticalGames(scheduleResponse);
     uniqueGames.forEach((g) => {
-      const game = createGame(g.event, g.homeTeamId, g.leagueId, g.awayTeamId);
+      const game = createGame(
+        g.event,
+        g.homeTeamId,
+        g.leagueId,
+        g.awayTeamId,
+        g.season
+      );
       games.push(game);
     });
     // Connect Identical Games
@@ -150,6 +157,29 @@ export const espnResponseHandler = {
 
     return { athletes, positions };
   },
+  handleGameSummaryResponse: (
+    gameSummaryResponse: {
+      gameSummary: EspnApiV2.GameSummaryResponse;
+      game: {
+        id: string;
+        espnId: string;
+        Teams: {
+          id: string;
+          espnId: string;
+        }[];
+        League: {
+          id: string;
+          slug: string;
+          sport: string;
+        };
+      };
+    }[]
+  ) => {
+    const gameStatistics: Prisma.GameStatisticCreateInput[] = [];
+    gameSummaryResponse.forEach((sr) => {
+      const gameStatistic = createGameStatistic(sr);
+    });
+  },
 };
 
 const createTeam: (
@@ -175,8 +205,15 @@ const createGame: (
   event: EspnApiV2.ResponseTeamSchedule.Event,
   homeTeamId: string,
   leagueId: string,
-  awayTeamId: string
-) => Prisma.GameCreateInput = (event, homeTeamId, leagueId, awayTeamId) => {
+  awayTeamId: string,
+  season: EspnApiV2.ResponseTeamSchedule.RequestedSeasonClass
+) => Prisma.GameCreateInput = (
+  event,
+  homeTeamId,
+  leagueId,
+  awayTeamId,
+  season
+) => {
   return {
     espnId: event.id,
     date: new Date(event.date),
@@ -186,8 +223,25 @@ const createGame: (
     isComplete: event.competitions?.[0]?.status?.type?.completed ?? false,
     awayTeamId,
     homeTeamId,
-    leagueId: leagueId,
+    League: { connect: { id: leagueId } },
     Teams: { connect: [{ id: homeTeamId }, { id: awayTeamId }] },
+    Season: {
+      connectOrCreate: {
+        where: {
+          yearNumber_type: { yearNumber: season.year, type: season.type },
+        },
+        create: {
+          type: season.type,
+          name: season.name,
+          Year: {
+            connectOrCreate: {
+              where: { year: season.year },
+              create: { year: season.year },
+            },
+          },
+        },
+      },
+    },
   };
 };
 
@@ -349,6 +403,7 @@ const mapIdenticalGames: (
   homeTeamId?: string;
   event: EspnApiV2.ResponseTeamSchedule.Event;
   leagueId: string;
+  season: EspnApiV2.ResponseTeamSchedule.RequestedSeasonClass;
 }[] = (scheduleResponse) => {
   const gameHash: Record<
     string,
@@ -357,6 +412,7 @@ const mapIdenticalGames: (
       homeTeamId?: string;
       event: EspnApiV2.ResponseTeamSchedule.Event;
       leagueId: string;
+      season: EspnApiV2.ResponseTeamSchedule.RequestedSeasonClass;
     }
   > = {};
   scheduleResponse.forEach((sr) => {
@@ -384,6 +440,7 @@ const mapIdenticalGames: (
             awayTeamId: undefined,
             leagueId: sr.leagueId,
             event: e,
+            season: sr.schedule.season,
           };
         } else {
           gameHash[`${e.id}_${sr.leagueId}`] = {
@@ -391,10 +448,207 @@ const mapIdenticalGames: (
             homeTeamId: undefined,
             leagueId: sr.leagueId,
             event: e,
+            season: sr.schedule.season,
           };
         }
       }
     });
   });
   return Object.values(gameHash).map((g) => g);
+};
+
+const createGameStatistic: (gameSummaryResponse: {
+  gameSummary: EspnApiV2.GameSummaryResponse;
+  game: {
+    id: string;
+    espnId: string;
+    Teams: {
+      id: string;
+      espnId: string;
+    }[];
+    League: {
+      id: string;
+      slug: string;
+      sport: string;
+    };
+  };
+}) => Prisma.GameStatisticCreateInput = (gameSummaryResponse) => {
+  const game = gameSummaryResponse.game;
+  return {
+    Game: { connect: { id: game.id } },
+    League: { connect: { id: game.League.id } },
+    TeamGameStatistics: {
+      // create: createTeamGameStatistics(gameSummaryResponse),
+    },
+  };
+};
+
+// const createTeamGameStatistics: (gameSummaryResponse: {
+//   gameSummary: EspnApiV2.GameSummaryResponse;
+//   game: {
+//     id: string;
+//     espnId: string;
+//     Teams: {
+//       id: string;
+//       espnId: string;
+//     }[];
+//     League: {
+//       id: string;
+//       slug: string;
+//       sport: string;
+//     };
+//   };
+// }) => Prisma.TeamGameStatisticCreateWithoutGameStatisticInput[] = (
+//   gameSummaryResponse
+// ) => {
+//   const teamGameStatistics: Prisma.TeamGameStatisticCreateWithoutGameStatisticInput[] =
+//     [];
+//   gameSummaryResponse.gameSummary.boxscore.teams.forEach((t) => {
+//     const teamId = gameSummaryResponse.game.Teams.find(
+//       (gt) => gt.espnId === t.team.id
+//     )?.id;
+//     const teamGameStatistic: Prisma.TeamGameStatisticCreateWithoutGameStatisticInput =
+//       {
+//         Team: { connect: { id: teamId } },
+//         NflStatistic: { create: createNflStatistics(t.statistics) },
+//       };
+//   });
+// };
+
+const createNflStatistics: (
+  statistics: EspnApiV2.ResponseGameSummary.TeamStatistic[]
+) => Prisma.NflTeamStatisticCreateWithoutTeamGameStatisticInput = (
+  statistics
+) => {
+  return {
+    firstDowns: stringToNumberOrNull(
+      statistics.find((s) => s.name === "firstDowns")?.displayValue
+    ),
+    firstDownsPassing: stringToNumberOrNull(
+      statistics.find((s) => s.name === "firstDownsPassing")?.displayValue
+    ),
+    firstDownsRushing: stringToNumberOrNull(
+      statistics.find((s) => s.name === "firstDownsRushing")?.displayValue
+    ),
+    firstDownsPenalty: stringToNumberOrNull(
+      statistics.find((s) => s.name === "firstDownsPenalty")?.displayValue
+    ),
+    thirdDownEff: statistics.find((s) => s.name === "thirdDownEff")
+      ?.displayValue,
+    fourthDownEff: statistics.find((s) => s.name === "fourthDownEff")
+      ?.displayValue,
+    totalOffensivePlays: stringToNumberOrNull(
+      statistics.find((s) => s.name === "totalOffensivePlays")?.displayValue
+    ),
+    totalYards: stringToNumberOrNull(
+      statistics.find((s) => s.name === "totalYards")?.displayValue
+    ),
+    yardsPerPlay: stringToNumberOrNull(
+      statistics.find((s) => s.name === "yardsPerPlay")?.displayValue
+    ),
+    totalDrives: stringToNumberOrNull(
+      statistics.find((s) => s.name === "totalDrives")?.displayValue
+    ),
+    netPassingYards: stringToNumberOrNull(
+      statistics.find((s) => s.name === "netPassingYards")?.displayValue
+    ),
+    completionsAttempts: statistics.find(
+      (s) => s.name === "completionsAttempts"
+    )?.displayValue,
+    yardsPerPass: stringToNumberOrNull(
+      statistics.find((s) => s.name === "yardsPerPass")?.displayValue
+    ),
+    interceptions: stringToNumberOrNull(
+      statistics.find((s) => s.name === "int")?.displayValue
+    ),
+    sacks: stringToNumberOrNull(
+      statistics
+        .find((s) => s.name === "sacksYardsLost")
+        ?.displayValue?.split("-")?.[0]
+    ),
+    sackYards: stringToNumberOrNull(
+      statistics
+        .find((s) => s.name === "sacksYardsLost")
+        ?.displayValue?.split("-")?.[1]
+    ),
+    rushingYards: stringToNumberOrNull(
+      statistics.find((s) => s.name === "rushingYards")?.displayValue
+    ),
+    passingYards: stringToNumberOrNull(
+      statistics.find((s) => s.name === "passingYards")?.displayValue
+    ),
+    rushingAttempts: stringToNumberOrNull(
+      statistics.find((s) => s.name === "rushingAttempts")?.displayValue
+    ),
+    yardsPerRushAttempt: stringToNumberOrNull(
+      statistics.find((s) => s.name === "yardsPerRushAttempt")?.displayValue
+    ),
+    redZoneAttempts: stringToNumberOrNull(
+      statistics
+        .find((s) => s.name === "redZoneAttempts")
+        ?.displayValue?.split("-")?.[0]
+    ),
+    redZoneConversions: stringToNumberOrNull(
+      statistics
+        .find((s) => s.name === "redZoneAttempts")
+        ?.displayValue?.split("-")?.[1]
+    ),
+    totalPenalties: stringToNumberOrNull(
+      statistics
+        .find((s) => s.name === "totalPenaltiesYards")
+        ?.displayValue?.split("-")?.[0]
+    ),
+    totalPenaltyYards: stringToNumberOrNull(
+      statistics
+        .find((s) => s.name === "totalPenaltiesYards")
+        ?.displayValue?.split("-")?.[1]
+    ),
+    turnovers: stringToNumberOrNull(
+      statistics.find((s) => s.name === "turnovers")?.displayValue
+    ),
+    fumblesLost: stringToNumberOrNull(
+      statistics.find((s) => s.name === "fumblesLost")?.displayValue
+    ),
+    interceptionsThrown: stringToNumberOrNull(
+      statistics.find((s) => s.name === "interceptions")?.displayValue
+    ),
+    defensiveTds: stringToNumberOrNull(
+      statistics.find((s) => s.name === "defensiveTouchdowns")?.displayValue
+    ),
+    possessionTime: statistics.find((s) => s.name === "possessionTime")
+      ?.displayValue,
+    AthleteTotalStatistics: {
+      // create: createAthleteTotalStatistics(statistics),
+    },
+  };
+};
+
+// const createAthleteTotalStatistics: (
+//   athleteStats: any
+// ) => Prisma.NflAthleteStatisticCreateWithoutNflTeamStatisticInput = (
+//   athleteStats
+// ) => {
+//   return {
+//     PassingStatistics: { create: createPassingStatistics(athleteStats) },
+//     RushingStatistics: { create: createRushingStatistics(athleteStats) },
+//     ReceivingStatistics: { create: createReceivingStatistics(athleteStats) },
+//     FumblesStatistics: { create: createFumblesStatistics(athleteStats) },
+//     KickingStatistics: { create: createKickingStatistics(athleteStats) },
+//     PuntingStatistics: { create: createPuntingStatistics(athleteStats) },
+//     KickReturnStatistics: { create: createKickReturnStatistics(athleteStats) },
+//     PuntReturnStatistics: { create: createPuntReturnStatistics(athleteStats) },
+//     DefensiveStatistics: { create: createDefenseStatistics(athleteStats) },
+//     InterceptionStatistics: {
+//       create: createInterceptionStatistics(athleteStats),
+//     },
+//     FumbleStatistics: { create: createFumbleStatistics(athleteStats) },
+//   };
+// };
+
+const stringToNumberOrNull: (string: string) => number | null = (string) => {
+  const value = parseFloat(string);
+  if (!isNaN(value)) {
+    return value;
+  }
+  return null;
 };

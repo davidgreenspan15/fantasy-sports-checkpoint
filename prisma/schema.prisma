@@ -10,6 +10,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Year {
+  id        String    @id @default(uuid())
+  year      Int       @unique
+  Seasons   Season[]
+  // Roster
+  // Depth Chart
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime? @map(name: "updated_at")
+
+  @@map(name: "years")
+}
+
+model Season {
+  id         String    @id @default(uuid())
+  name       String //Preseason, Regular, Postseason, Offseason
+  type       Int // 1=Preseaons ,2=Regular,3=Postseason,4=Offseason
+  Games      Game[]
+  Year       Year?     @relation(fields: [yearNumber], references: [year])
+  yearNumber Int?      @map(name: "year_number")
+  createdAt  DateTime  @default(now()) @map(name: "created_at")
+  updatedAt  DateTime? @map(name: "updated_at")
+
+  @@unique([yearNumber, type])
+  @@map(name: "seasons")
+}
+
 model League {
   id           String     @id @default(uuid())
   espnId       String     @map(name: "espn_id")
@@ -20,6 +46,7 @@ model League {
   sport        String
   Teams        Team[]
   Athletes     Athlete[]
+  Games        Game[]
   Positions    Position[]
   Depths       Depth[]
 
@@ -130,30 +157,33 @@ model Position {
 }
 
 model Game {
-  id             String          @id @default(uuid())
-  espnId         String          @map(name: "espn_id")
-  date           DateTime
-  name           String
-  shortName      String          @map(name: "short_name")
-  week           Int?
-  isComplete     Boolean         @default(false) @map(name: "is_complete")
-  homeTeamId     String          @map(name: "home_team_id")
-  awayTeamId     String          @map(name: "away_team_id")
-  leagueId       String          @map(name: "league_id")
-  GameStatistics GameStatistic[]
+  id         String         @id @default(uuid())
+  espnId     String         @map(name: "espn_id")
+  date       DateTime
+  name       String
+  shortName  String         @map(name: "short_name")
+  week       Int?
+  isComplete Boolean        @default(false) @map(name: "is_complete")
+  homeTeamId String         @map(name: "home_team_id")
+  awayTeamId String         @map(name: "away_team_id")
+  Statistics GameStatistic?
+  Teams      Team[]
+  Season     Season?        @relation(fields: [seasonId], references: [id])
+  seasonId   String?        @map(name: "season_id")
+  League     League         @relation(fields: [leagueId], references: [id])
+  leagueId   String         @map(name: "league_id")
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
-  Teams     Team[]
 
-  @@unique([leagueId, espnId])
+  @@unique([espnId, leagueId])
   @@map(name: "games")
 }
 
 model GameStatistic {
   id                    String                 @id @default(uuid())
   Game                  Game                   @relation(fields: [gameId], references: [id])
-  gameId                String                 @map(name: "game_id")
+  gameId                String                 @unique @map(name: "game_id")
   TeamGameStatistics    TeamGameStatistic[]
   AthleteGameStatistics AthleteGameStatistic[]
   createdAt             DateTime               @default(now()) @map(name: "created_at")
@@ -189,8 +219,8 @@ model AthleteGameStatistic {
 
 model NflAthleteStatistic {
   id                       String                 @id @default(uuid())
-  AthleteGameStatistic     AthleteGameStatistic   @relation(fields: [athleteGameStatisticId], references: [id])
-  athleteGameStatisticId   String                 @unique @map(name: "athlete_game_statistic_id")
+  AthleteGameStatistic     AthleteGameStatistic?  @relation(fields: [athleteGameStatisticId], references: [id])
+  athleteGameStatisticId   String?                @unique @map(name: "athlete_game_statistic_id")
   NflTeamStatistic         NflTeamStatistic?
   PassingStatistics        PassingStatistics      @relation(fields: [passingStatisticsId], references: [id])
   passingStatisticsId      String                 @unique @map(name: "passing_statistics_id")

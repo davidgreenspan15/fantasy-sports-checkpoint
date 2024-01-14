@@ -12,6 +12,8 @@ export namespace EspnApiV2 {
 
   export type LeagueAthleteResponse = ResponseLeagueAthlete.Athlete;
 
+  export type GameSummaryResponse = ResponseGameSummary.GameSummary;
+
   export namespace ResponseTeamList {
     export interface SportTeam {
       sports: Sport[];
@@ -890,6 +892,852 @@ export namespace EspnApiV2 {
       name: string;
       type: string;
       abbreviation: string;
+    }
+  }
+  export namespace ResponseGameSummary {
+    export interface GameSummary {
+      boxscore: Boxscore;
+      format: Format;
+      gameInfo: GameInfo;
+      drives: Drives;
+      leaders: Leader[];
+      broadcasts: any[];
+      predictor: Predictor;
+      pickcenter: Pickcenter[];
+      againstTheSpread: AgainstTheSpread[];
+      odds: any[];
+      winprobability: Winprobability[];
+      scoringPlays: ScoringPlay[];
+      header: Header;
+      news: News;
+      article: Article;
+      videos: any[];
+      standings: Standing;
+    }
+
+    export interface AgainstTheSpread {
+      team: AgainstTheSpreadTeam;
+      records: any[];
+    }
+
+    export interface AgainstTheSpreadTeam {
+      id: string;
+      uid: Uid;
+      displayName: TeamDisplayName;
+      abbreviation: TeamAbbreviation;
+      links: FullViewLinkElement[];
+      logo: string;
+      logos: LogoElement[];
+    }
+
+    export enum TeamAbbreviation {
+      Atl = "ATL",
+      Phi = "PHI",
+    }
+
+    export enum TeamDisplayName {
+      AtlantaFalcons = "Atlanta Falcons",
+      PhiladelphiaEagles = "Philadelphia Eagles",
+    }
+
+    export interface FullViewLinkElement {
+      href: string;
+      text: Text;
+    }
+
+    export enum Text {
+      Clubhouse = "Clubhouse",
+      FullStandings = "Full Standings",
+      Schedule = "Schedule",
+    }
+
+    export interface LogoElement {
+      href: string;
+      width: number;
+      height: number;
+      alt: string;
+      rel: BoxscoreSource[];
+      lastUpdated?: LastUpdated;
+    }
+
+    export enum LastUpdated {
+      The20180605T1211Z = "2018-06-05T12:11Z",
+      The20220202T1351Z = "2022-02-02T13:51Z",
+      The20220202T1358Z = "2022-02-02T13:58Z",
+      The20230824T1926Z = "2023-08-24T19:26Z",
+      The20230824T1927Z = "2023-08-24T19:27Z",
+      The20230824T1928Z = "2023-08-24T19:28Z",
+    }
+
+    export enum BoxscoreSource {
+      Dark = "dark",
+      Day = "day",
+      Default = "default",
+      Full = "full",
+      Interior = "interior",
+      Scoreboard = "scoreboard",
+    }
+
+    export enum Uid {
+      S20L28T1 = "s:20~l:28~t:1",
+      S20L28T21 = "s:20~l:28~t:21",
+    }
+
+    export interface Article {
+      keywords: any[];
+      description: string;
+      source: string;
+      video: any[];
+      type: string;
+      nowId: string;
+      premium: boolean;
+      related: any[];
+      allowSearch: boolean;
+      links: PurpleLinks;
+      id: number;
+      categories: PurpleCategory[];
+      headline: string;
+      gameId: string;
+      images: any[];
+      linkText: string;
+      published: string;
+      allowComments: boolean;
+      lastModified: string;
+      metrics: Metric[];
+      inlines: any[];
+      story: string;
+    }
+
+    export interface PurpleCategory {
+      id: number;
+      description: string;
+      type: CategoryType;
+      sportId: number;
+      leagueId?: number;
+      league?: CategoryLeague;
+      uid: string;
+      teamId?: number;
+      team?: CategoryTeam;
+    }
+
+    export interface CategoryLeague {
+      id: number;
+      description: string;
+      links: LeagueLinks;
+    }
+
+    export interface LeagueLinks {
+      api: PurpleAPI;
+      web: PurpleAPI;
+      mobile: PurpleAPI;
+    }
+
+    export interface PurpleAPI {
+      leagues: Mobile;
+    }
+
+    export interface Mobile {
+      href?: string;
+    }
+
+    export interface CategoryTeam {
+      id: number;
+      description: string;
+      links: TeamLinks;
+    }
+
+    export interface TeamLinks {
+      api: FluffyAPI;
+      web: FluffyAPI;
+      mobile: FluffyAPI;
+    }
+
+    export interface FluffyAPI {
+      teams: Mobile;
+    }
+
+    export enum CategoryType {
+      Athlete = "athlete",
+      GUID = "guid",
+      League = "league",
+      Team = "team",
+      Topic = "topic",
+    }
+
+    export interface PurpleLinks {
+      api: TentacledAPI;
+      web: Mobile;
+      app: App;
+      mobile: Mobile;
+    }
+
+    export interface TentacledAPI {
+      news: Mobile;
+      events: Mobile;
+    }
+
+    export interface App {
+      sportscenter: Mobile;
+    }
+
+    export interface Metric {
+      count: number;
+      type: string;
+    }
+
+    export interface Boxscore {
+      teams: TeamElement[];
+      players: Player[];
+    }
+
+    export interface Player {
+      team: PlayerTeam;
+      statistics: PlayerStatistic[];
+      displayOrder: number;
+    }
+
+    export interface PlayerStatistic {
+      name: string;
+      keys: string[];
+      text: string;
+      labels: string[];
+      descriptions: string[];
+      athletes: AthleteElement[];
+      totals: string[];
+    }
+
+    export interface AthleteElement {
+      athlete: AthleteAthlete;
+      stats: string[];
+    }
+
+    export interface AthleteAthlete {
+      id: string;
+      uid: string;
+      guid: string;
+      firstName: string;
+      lastName: string;
+      displayName: string;
+      links: AthleteLink[];
+    }
+
+    export interface AthleteLink {
+      rel: string[];
+      href: string;
+      text: string;
+    }
+
+    export interface PlayerTeam {
+      id: string;
+      uid: Uid;
+      slug: string;
+      location: string;
+      name: NicknameEnum;
+      abbreviation: TeamAbbreviation;
+      displayName: TeamDisplayName;
+      shortDisplayName: NicknameEnum;
+      color: string;
+      alternateColor: string;
+      logo: string;
+    }
+
+    export enum NicknameEnum {
+      Eagles = "Eagles",
+      Falcons = "Falcons",
+    }
+
+    export interface TeamElement {
+      team: PlayerTeam;
+      statistics: TeamStatistic[];
+      displayOrder: number;
+    }
+
+    export interface TeamStatistic {
+      name: string;
+      displayValue: string;
+      label: string;
+    }
+
+    export interface Drives {
+      previous: Previous[];
+    }
+
+    export interface Previous {
+      id: string;
+      description: string;
+      team: PreviousTeam;
+      start: PreviousEnd;
+      end: PreviousEnd;
+      timeElapsed: TimeElapsed;
+      yards: number;
+      isScore: boolean;
+      offensivePlays: number;
+      result: string;
+      shortDisplayResult: string;
+      displayResult: string;
+      plays: Play[];
+    }
+
+    export interface PreviousEnd {
+      period: EndPeriod;
+      clock?: TimeElapsed;
+      yardLine: number;
+      text: string;
+    }
+
+    export interface TimeElapsed {
+      displayValue: string;
+    }
+
+    export interface EndPeriod {
+      type: PeriodType;
+      number: number;
+    }
+
+    export enum PeriodType {
+      Quarter = "quarter",
+    }
+
+    export interface Play {
+      id: string;
+      sequenceNumber: string;
+      type: PlayType;
+      text: string;
+      awayScore: number;
+      homeScore: number;
+      period: PlayPeriod;
+      clock: TimeElapsed;
+      scoringPlay: boolean;
+      priority: boolean;
+      modified: Modified;
+      wallclock: string;
+      start: PlayEnd;
+      end: PlayEnd;
+      statYardage: number;
+      scoringType?: ScoringType;
+    }
+
+    export interface PlayEnd {
+      down: number;
+      distance: number;
+      yardLine: number;
+      yardsToEndzone: number;
+      downDistanceText?: string;
+      shortDownDistanceText?: string;
+      possessionText?: string;
+      team?: EndTeam;
+    }
+
+    export interface EndTeam {
+      id: string;
+    }
+
+    export enum Modified {
+      The20211012T1018Z = "2021-10-12T10:18Z",
+    }
+
+    export interface PlayPeriod {
+      number: number;
+    }
+
+    export interface ScoringType {
+      name: ScoringTypeName;
+      displayName: ScoringTypeDisplayName;
+      abbreviation: ScoringTypeAbbreviation;
+    }
+
+    export enum ScoringTypeAbbreviation {
+      Eg = "EG",
+      Eh = "EH",
+      Ep = "EP",
+      Fg = "FG",
+      K = "K",
+      Pen = "PEN",
+      Punt = "PUNT",
+      Rec = "REC",
+      Rush = "RUSH",
+      Td = "TD",
+      The2MinWarn = "2Min Warn",
+      To = "TO",
+    }
+
+    export enum ScoringTypeDisplayName {
+      FieldGoal = "Field Goal",
+      Touchdown = "Touchdown",
+    }
+
+    export enum ScoringTypeName {
+      FieldGoal = "field-goal",
+      Touchdown = "touchdown",
+    }
+
+    export interface PlayType {
+      id: string;
+      text: string;
+      abbreviation?: ScoringTypeAbbreviation;
+    }
+
+    export interface PreviousTeam {
+      name: NicknameEnum;
+      abbreviation: TeamAbbreviation;
+      displayName: TeamDisplayName;
+      shortDisplayName: NicknameEnum;
+      logos: LogoElement[];
+    }
+
+    export interface Format {
+      regulation: Overtime;
+      overtime: Overtime;
+    }
+
+    export interface Overtime {
+      periods: number;
+      displayName: string;
+      slug: string;
+      clock: number;
+    }
+
+    export interface GameInfo {
+      venue: Venue;
+      attendance: number;
+    }
+
+    export interface Venue {
+      id: string;
+      fullName: string;
+      address: Address;
+      capacity: number;
+      grass: boolean;
+      images: LogoElement[];
+    }
+
+    export interface Address {
+      city: string;
+      state: string;
+      zipCode: string;
+    }
+
+    export interface Header {
+      id: string;
+      uid: string;
+      season: Season;
+      timeValid: boolean;
+      competitions: Competition[];
+      links: HeaderLink[];
+      week: number;
+      league: HeaderLeague;
+    }
+
+    export interface Competition {
+      id: string;
+      uid: string;
+      date: string;
+      neutralSite: boolean;
+      conferenceCompetition: boolean;
+      boxscoreAvailable: boolean;
+      commentaryAvailable: boolean;
+      liveAvailable: boolean;
+      onWatchESPN: boolean;
+      recent: boolean;
+      boxscoreSource: BoxscoreSource;
+      playByPlaySource: BoxscoreSource;
+      competitors: Competitor[];
+      status: Status;
+      broadcasts: Broadcast[];
+    }
+
+    export interface Broadcast {
+      type: BroadcastType;
+      market: Market;
+      media: Media;
+      lang: string;
+      region: string;
+    }
+
+    export interface Market {
+      id: string;
+      type: string;
+    }
+
+    export interface Media {
+      shortName: string;
+    }
+
+    export interface BroadcastType {
+      id: string;
+      shortName: string;
+    }
+
+    export interface Competitor {
+      id: string;
+      uid: Uid;
+      order: number;
+      homeAway: string;
+      winner: boolean;
+      team: CompetitorTeam;
+      score: string;
+      linescores: TimeElapsed[];
+      record: Record[];
+      possession: boolean;
+    }
+
+    export interface Record {
+      type: string;
+      summary: string;
+      displayValue: string;
+    }
+
+    export interface CompetitorTeam {
+      id: string;
+      uid: Uid;
+      location: string;
+      name: NicknameEnum;
+      nickname: NicknameEnum;
+      abbreviation: TeamAbbreviation;
+      displayName: TeamDisplayName;
+      color: string;
+      alternateColor: string;
+      logos: LogoElement[];
+      links: AthleteLink[];
+    }
+
+    export interface Status {
+      type: StatusType;
+    }
+
+    export interface StatusType {
+      id: string;
+      name: string;
+      state: string;
+      completed: boolean;
+      description: string;
+      detail: string;
+      shortDetail: string;
+    }
+
+    export interface HeaderLeague {
+      id: string;
+      uid: string;
+      name: string;
+      abbreviation: string;
+      slug: string;
+      isTournament: boolean;
+      links: AthleteLink[];
+    }
+
+    export interface HeaderLink {
+      rel: string[];
+      href: string;
+      text: string;
+      shortText: string;
+      isExternal: boolean;
+      isPremium: boolean;
+      language?: string;
+    }
+
+    export interface Season {
+      year: number;
+      type: number;
+    }
+
+    export interface Leader {
+      team: AgainstTheSpreadTeam;
+      leaders: PurpleLeader[];
+    }
+
+    export interface PurpleLeader {
+      name: string;
+      displayName: string;
+      leaders: FluffyLeader[];
+    }
+
+    export interface FluffyLeader {
+      displayValue: string;
+      athlete: LeaderAthlete;
+    }
+
+    export interface LeaderAthlete {
+      id: string;
+      uid: string;
+      guid: string;
+      lastName: string;
+      fullName: string;
+      displayName: string;
+      shortName: string;
+      links: AthleteLink[];
+      headshot: Headshot;
+      jersey: string;
+      position: Position;
+      team: AthleteTeam;
+    }
+
+    export interface Headshot {
+      href: string;
+      alt: string;
+    }
+
+    export interface Position {
+      abbreviation: string;
+    }
+
+    export interface AthleteTeam {
+      $ref: string;
+    }
+
+    export interface News {
+      header: string;
+      link: HeaderLink;
+      articles: ArticleElement[];
+    }
+
+    export interface ArticleElement {
+      images: ArticleImage[];
+      dataSourceIdentifier?: string;
+      description: string;
+      published: string;
+      type: string;
+      premium: boolean;
+      links: FluffyLinks;
+      lastModified: string;
+      categories: FluffyCategory[];
+      headline: string;
+      byline?: string;
+    }
+
+    export interface FluffyCategory {
+      id?: number;
+      description?: string;
+      type: CategoryType;
+      sportId?: number;
+      leagueId?: number;
+      league?: CategoryLeague;
+      uid?: string;
+      createDate?: string;
+      teamId?: number;
+      team?: CategoryTeam;
+      athleteId?: number;
+      athlete?: CategoryAthlete;
+      guid?: string;
+      topicId?: number;
+    }
+
+    export interface CategoryAthlete {
+      id: number;
+      description: string;
+      links: AthleteLinks;
+    }
+
+    export interface AthleteLinks {
+      api: StickyAPI;
+      web: StickyAPI;
+      mobile: StickyAPI;
+    }
+
+    export interface StickyAPI {
+      athletes: Mobile;
+    }
+
+    export interface ArticleImage {
+      name: string;
+      width: number;
+      alt?: string;
+      caption?: string;
+      url: string;
+      height: number;
+      dataSourceIdentifier?: string;
+      id?: number;
+      credit?: string;
+      type?: string;
+      _id?: number;
+    }
+
+    export interface FluffyLinks {
+      api: IndigoAPI;
+      web: Mobile;
+      mobile?: Mobile;
+    }
+
+    export interface IndigoAPI {
+      news: Mobile;
+      self: Mobile;
+    }
+
+    export interface Pickcenter {
+      provider: Provider;
+      details: string;
+      overUnder: number;
+      spread: number;
+      overOdds: number;
+      underOdds: number;
+      awayTeamOdds: TeamOdds;
+      homeTeamOdds: TeamOdds;
+      links: any[];
+      current: PickcenterCurrent;
+    }
+
+    export interface TeamOdds {
+      winPercentage?: number;
+      favorite: boolean;
+      underdog: boolean;
+      moneyLine: number;
+      spreadOdds: number;
+      current: AwayTeamOddsCurrent;
+      teamId: string;
+      averageScore?: number;
+      moneyLineOdds?: number;
+      spreadReturn?: number;
+      spreadRecord?: SpreadRecord;
+    }
+
+    export interface AwayTeamOddsCurrent {
+      pointSpread: Over;
+      spread: Over;
+      moneyLine: Over;
+    }
+
+    export interface Over {
+      alternateDisplayValue: string;
+    }
+
+    export interface SpreadRecord {
+      wins: number;
+      losses: number;
+      pushes: number;
+      summary: string;
+    }
+
+    export interface PickcenterCurrent {
+      over: Over;
+      under: Over;
+      total: Over;
+    }
+
+    export interface Provider {
+      id: string;
+      name: string;
+      priority: number;
+    }
+
+    export interface Predictor {
+      header: string;
+      homeTeam: Team;
+      awayTeam: Team;
+    }
+
+    export interface Team {
+      id: string;
+      gameProjection: string;
+      teamChanceLoss: string;
+      teamChanceTie: string;
+    }
+
+    export interface ScoringPlay {
+      id: string;
+      type: PlayType;
+      text: string;
+      awayScore: number;
+      homeScore: number;
+      period: PlayPeriod;
+      clock: Clock;
+      team: AgainstTheSpreadTeam;
+      scoringType: ScoringType;
+    }
+
+    export interface Clock {
+      value: number;
+      displayValue: string;
+    }
+
+    export interface Standing {
+      fullViewLink: FullViewLinkElement;
+      groups: Group[];
+    }
+
+    export interface Group {
+      standings: GroupStandings;
+      header: string;
+      href: string;
+    }
+
+    export interface GroupStandings {
+      entries: Entry[];
+    }
+
+    export interface Entry {
+      team: string;
+      link: string;
+      id: string;
+      uid: string;
+      stats: Stat[];
+      logo: LogoElement[];
+    }
+
+    export interface Stat {
+      name: StatName;
+      displayName?: StatDisplayName;
+      shortDisplayName?: ShortDisplayNameEnum;
+      description?: Description;
+      abbreviation: ShortDisplayNameEnum;
+      type: StatType;
+      value?: number;
+      displayValue: string;
+      id?: string;
+      summary?: string;
+    }
+
+    export enum ShortDisplayNameEnum {
+      Any = "Any",
+      L = "L",
+      Pa = "PA",
+      Pct = "PCT",
+      Pf = "PF",
+      T = "T",
+      W = "W",
+    }
+
+    export enum Description {
+      Losses = "Losses",
+      Ties = "Ties",
+      TotalPointsAgainst = "Total Points Against",
+      TotalPointsFor = "Total Points For",
+      WINS = "Wins",
+      WinningPercentage = "Winning Percentage",
+    }
+
+    export enum StatDisplayName {
+      Losses = "Losses",
+      PointsAgainst = "Points Against",
+      PointsFor = "Points For",
+      Ties = "Ties",
+      WINS = "Wins",
+      WinPercentage = "Win Percentage",
+    }
+
+    export enum StatName {
+      Losses = "losses",
+      Overall = "overall",
+      PointsAgainst = "pointsAgainst",
+      PointsFor = "pointsFor",
+      Ties = "ties",
+      WINS = "wins",
+      WinPercent = "winPercent",
+    }
+
+    export enum StatType {
+      Losses = "losses",
+      Pointsagainst = "pointsagainst",
+      Pointsfor = "pointsfor",
+      Ties = "ties",
+      Total = "total",
+      WINS = "wins",
+      Winpercent = "winpercent",
+    }
+
+    export interface Winprobability {
+      tiePercentage: number;
+      homeWinPercentage: number;
+      secondsLeft: number;
+      playId: string;
     }
   }
 }

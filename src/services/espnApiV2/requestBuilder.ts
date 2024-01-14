@@ -112,4 +112,17 @@ export const espnRequestBuilder = {
       throw { ...err, espnApiRequestError: true } as EspnError;
     }
   },
+  buildGameSummaryRequest: async (
+    sport: string,
+    slug: string,
+    espnEventId: string
+  ) => {
+    const url = `${baseUrl}/${sport}/${slug}/summary?event=${espnEventId}`;
+    try {
+      const response = await axios.get<EspnApiV2.GameSummaryResponse>(url);
+      return response.data;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
 };

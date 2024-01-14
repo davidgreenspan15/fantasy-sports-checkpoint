@@ -2,13 +2,18 @@ import { Express } from "express";
 import { Logger } from "winston";
 
 import {
-  dropEspnData,
+  // dropEspnData,
   migrateDepths,
   migrateFreeAgentAthletes,
   migrateTeamAthletes,
   migrateGames,
   migrateTeams,
+  migrateGameStatistics,
 } from "../handlers/espnApiV2";
+import {
+  connectSeasonsToGames,
+  reconnectAthletesGamesTeamsToLeagues,
+} from "../util/migrationFixes";
 
 export const espnApiV2Routes = (app: Express, logger: Logger) => {
   //Run Full Migration
@@ -88,13 +93,41 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
       res.status(500).json(err);
     }
   });
-  app.get("/dropEspnData", async (req, res) => {
+
+  app.get("/migrateGameStatistics", async (req, res) => {
     try {
-      const drop = await dropEspnData();
-      res.status(200).json({ drop });
+      const gameStatistics = await migrateGameStatistics(logger);
+      res.status(200).json({ gameStatistics });
     } catch (err) {
       logger.error(err);
       res.status(500).json(err);
     }
   });
+  // app.get("/reconnectAthletesGamesTeamsToLeagues", async (req, res) => {
+  //   try {
+  //     const resp = await reconnectAthletesGamesTeamsToLeagues();
+  //     res.status(200).json({ resp });
+  //   } catch (err) {
+  //     logger.error(err);
+  //     res.status(500).json(err);
+  //   }
+  // });
+  app.get("/connectSeasonsToGames", async (req, res) => {
+    try {
+      const resp = await connectSeasonsToGames();
+      res.status(200).json({ resp });
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json(err);
+    }
+  });
+  // app.get("/dropEspnData", async (req, res) => {
+  //   try {
+  //     const drop = await dropEspnData();
+  //     res.status(200).json({ drop });
+  //   } catch (err) {
+  //     logger.error(err);
+  //     res.status(500).json(err);
+  //   }
+  // });
 };
