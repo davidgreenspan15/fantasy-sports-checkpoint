@@ -37,10 +37,14 @@ export const upsertTeamGame = async (game: Prisma.GameCreateInput) => {
   }
 };
 
-export const listAllNflGames = async (gameIds: string[]) => {
+export const listAllNflGames = async (
+  gameIds: string[],
+  isGameComplete?: boolean,
+  isGameStatisticComplete?: boolean
+) => {
   const whereClause = {
     League: {
-      slug: "nfl",
+      OR: [{ slug: "nba" }, { slug: "nfl" }],
     },
   };
   if (gameIds.length > 0) {
@@ -48,11 +52,24 @@ export const listAllNflGames = async (gameIds: string[]) => {
       in: gameIds,
     };
   }
+  if (isGameComplete) {
+    whereClause["isComplete"] = true;
+  }
+  if (isGameStatisticComplete === true) {
+    whereClause["Statistics"] = {
+      isComplete: true,
+    };
+  } else if (isGameStatisticComplete === false) {
+    whereClause["Statistics"] = {
+      isComplete: false,
+    };
+  }
   return await prisma.game.findMany({
     where: whereClause,
     select: {
       id: true,
       espnId: true,
+      isComplete: true,
       League: {
         select: {
           slug: true,
@@ -64,6 +81,7 @@ export const listAllNflGames = async (gameIds: string[]) => {
       Statistics: {
         select: {
           id: true,
+          isComplete: true,
           TeamGameStatistics: {
             select: {
               id: true,

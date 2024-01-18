@@ -13,6 +13,7 @@ import {
   createTeamGameStatistics,
   mapIdenticalGames,
 } from "./responseHandlerHelpers";
+import { updateGameStatisticsIsComplete } from "../../models/GameStatistics";
 
 export const espnResponseHandler = {
   handleSportsTeamsResponse: (
@@ -184,6 +185,10 @@ export const espnResponseHandler = {
           gameStatistic.id,
           athletes
         );
+
+        if (gsr.game.isComplete && !gsr.game.Statistics?.isComplete) {
+          await updateGameStatisticsIsComplete(gameStatistic.id);
+        }
         return { teamGameStatistics, gameStatistic, athleteGameStatistics };
       })
     );

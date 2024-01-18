@@ -98,7 +98,12 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
   app.get("/migrateGameStatistics", async (req, res) => {
     try {
       const gameIds = req.body.gameIds ?? [];
-      const gameStatistics = await migrateGameStatistics(logger, gameIds);
+      const gameStatistics = await migrateGameStatistics(
+        logger,
+        gameIds,
+        true,
+        false
+      );
       res.status(200).json({ gameStatistics });
     } catch (err) {
       logger.error(err);
@@ -126,7 +131,7 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
   app.get("/showGameStatistics", async (req, res) => {
     try {
       const resp = await getGameStatistic(
-        "32e85747-3a51-409b-a5c5-f003f9b6f150"
+        "f3fd289d-7302-45b0-bdc5-030c529b9750"
       );
       res.status(200).json({ resp });
     } catch (err) {

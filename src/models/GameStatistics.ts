@@ -14,6 +14,17 @@ export const upsertGameStatistics = async (
   });
 };
 
+export const updateGameStatisticsIsComplete = async (id: string) => {
+  return await prisma.gameStatistic.update({
+    where: {
+      id: id,
+    },
+    data: {
+      isComplete: true,
+    },
+  });
+};
+
 export const getGameStatistic = async (gameId: string) => {
   return await prisma.gameStatistic.findUnique({
     where: {
@@ -22,11 +33,18 @@ export const getGameStatistic = async (gameId: string) => {
     select: {
       Game: {
         select: {
+          id: true,
           name: true,
+          espnId: true,
         },
       },
       TeamGameStatistics: {
         select: {
+          Team: {
+            select: {
+              displayName: true,
+            },
+          },
           NflStatistic: {
             include: {
               AthleteTotalStatistics: {
@@ -45,11 +63,22 @@ export const getGameStatistic = async (gameId: string) => {
               },
             },
           },
+          NbStatistic: {
+            include: {
+              AthleteTotalStatistics: {
+                select: {
+                  BasketballStatistic: true,
+                },
+              },
+            },
+          },
         },
       },
       AthleteGameStatistics: {
         select: {
-          Athlete: { select: { fullName: true } },
+          Athlete: {
+            select: { fullName: true, Team: { select: { displayName: true } } },
+          },
           NflStatistic: {
             select: {
               PassingStatistics: true,
@@ -62,6 +91,11 @@ export const getGameStatistic = async (gameId: string) => {
               FumbleStatistics: true,
               InterceptionStatistics: true,
               PuntReturnStatistics: true,
+            },
+          },
+          NbaStatistic: {
+            select: {
+              BasketballStatistic: true,
             },
           },
         },

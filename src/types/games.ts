@@ -1,6 +1,7 @@
 export interface ListAllNflGamesResponse {
   id: string;
   espnId: string;
+  isComplete: boolean;
   League: {
     id: string;
     slug: string;
@@ -12,6 +13,7 @@ export interface ListAllNflGamesResponse {
   }[];
   Statistics: {
     id: string;
+    isComplete: boolean;
     TeamGameStatistics: {
       id: string;
       NflStatistic: {

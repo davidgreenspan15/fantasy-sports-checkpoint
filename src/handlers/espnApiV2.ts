@@ -208,10 +208,16 @@ export const migrateFreeAgentAthletes = async () => {
 // Currently Just NFL
 export const migrateGameStatistics = async (
   logger: Logger,
-  gameIds: string[]
+  gameIds: string[],
+  includeCompletedGames?: boolean,
+  includeCompletedGameStatistics?: boolean
 ) => {
   // Getting Games
-  const games: ListAllNflGamesResponse[] = await listAllNflGames(gameIds);
+  const games: ListAllNflGamesResponse[] = await listAllNflGames(
+    gameIds,
+    includeCompletedGames,
+    includeCompletedGameStatistics
+  );
   // Getting Athletes
   const athletes = await listAthletes();
   // Get Game Summary
