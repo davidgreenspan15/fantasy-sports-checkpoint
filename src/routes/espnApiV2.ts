@@ -14,6 +14,7 @@ import {
   connectSeasonsToGames,
   reconnectAthletesGamesTeamsToLeagues,
 } from "../util/migrationFixes";
+import { getGameStatistic } from "../models/GameStatistics";
 
 export const espnApiV2Routes = (app: Express, logger: Logger) => {
   //Run Full Migration
@@ -96,7 +97,8 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
 
   app.get("/migrateGameStatistics", async (req, res) => {
     try {
-      const gameStatistics = await migrateGameStatistics(logger);
+      const gameIds = req.body.gameIds ?? [];
+      const gameStatistics = await migrateGameStatistics(logger, gameIds);
       res.status(200).json({ gameStatistics });
     } catch (err) {
       logger.error(err);
@@ -115,6 +117,17 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
   app.get("/connectSeasonsToGames", async (req, res) => {
     try {
       const resp = await connectSeasonsToGames();
+      res.status(200).json({ resp });
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json(err);
+    }
+  });
+  app.get("/showGameStatistics", async (req, res) => {
+    try {
+      const resp = await getGameStatistic(
+        "32e85747-3a51-409b-a5c5-f003f9b6f150"
+      );
       res.status(200).json({ resp });
     } catch (err) {
       logger.error(err);

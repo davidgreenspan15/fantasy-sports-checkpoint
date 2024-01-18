@@ -37,13 +37,19 @@ export const upsertTeamGame = async (game: Prisma.GameCreateInput) => {
   }
 };
 
-export const listAllNflGames = async () => {
-  return await prisma.game.findMany({
-    where: {
-      League: {
-        slug: "nfl",
-      },
+export const listAllNflGames = async (gameIds: string[]) => {
+  const whereClause = {
+    League: {
+      slug: "nfl",
     },
+  };
+  if (gameIds.length > 0) {
+    whereClause["id"] = {
+      in: gameIds,
+    };
+  }
+  return await prisma.game.findMany({
+    where: whereClause,
     select: {
       id: true,
       espnId: true,
@@ -55,6 +61,56 @@ export const listAllNflGames = async () => {
         },
       },
       Teams: { select: { espnId: true, id: true } },
+      Statistics: {
+        select: {
+          id: true,
+          TeamGameStatistics: {
+            select: {
+              id: true,
+              NflStatistic: {
+                select: {
+                  id: true,
+                  AthleteTotalStatistics: {
+                    select: {
+                      id: true,
+                      PassingStatistics: { select: { id: true } },
+                      RushingStatistics: { select: { id: true } },
+                      ReceivingStatistics: { select: { id: true } },
+                      KickingStatistics: { select: { id: true } },
+                      PuntingStatistics: { select: { id: true } },
+                      KickReturnStatistics: { select: { id: true } },
+                      PuntReturnStatistics: { select: { id: true } },
+                      DefensiveStatistics: { select: { id: true } },
+                      FumbleStatistics: { select: { id: true } },
+                      InterceptionStatistics: { select: { id: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          AthleteGameStatistics: {
+            select: {
+              id: true,
+              NflStatistic: {
+                select: {
+                  id: true,
+                  PassingStatistics: { select: { id: true } },
+                  RushingStatistics: { select: { id: true } },
+                  ReceivingStatistics: { select: { id: true } },
+                  KickingStatistics: { select: { id: true } },
+                  PuntingStatistics: { select: { id: true } },
+                  KickReturnStatistics: { select: { id: true } },
+                  PuntReturnStatistics: { select: { id: true } },
+                  DefensiveStatistics: { select: { id: true } },
+                  FumbleStatistics: { select: { id: true } },
+                  InterceptionStatistics: { select: { id: true } },
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 };

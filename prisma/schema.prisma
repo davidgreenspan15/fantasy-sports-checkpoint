@@ -198,8 +198,11 @@ model TeamGameStatistic {
   gameStatisticId String            @map(name: "game_statistic_id")
   Team            Team              @relation(fields: [teamId], references: [id])
   teamId          String            @map(name: "team_id")
+  gameId          String            @map(name: "game_id")
   NflStatistic    NflTeamStatistic?
 
+  @@unique([gameId, teamId])
+  @@unique([gameStatisticId, teamId])
   @@map(name: "team_game_statistics")
 }
 
@@ -214,6 +217,7 @@ model AthleteGameStatistic {
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
 
+  @@unique([gameStatisticId, athleteId])
   @@map(name: "athlete_game_statistics")
 }
 
@@ -242,7 +246,12 @@ model NflAthleteStatistic {
   kickingStatisticsId      String                 @unique @map(name: "kicking_statistics_id")
   PuntingStatistics        PuntingStatistics      @relation(fields: [puntingStatisticsId], references: [id])
   puntingStatisticsId      String                 @unique @map(name: "punting_statistics_id")
+  teamId                   String?                @map(name: "team_id")
+  gameId                   String                 @map(name: "game_id")
+  athleteId                String?                @map(name: "athlete_id")
 
+  @@unique([gameId, athleteId])
+  @@unique([gameId, teamId])
   @@map(name: "nfl_statistics")
 }
 
@@ -280,7 +289,10 @@ model NflTeamStatistic {
   teamGameStatisticId      String              @unique @map(name: "team_game_statistic_id")
   AthleteTotalStatistics   NflAthleteStatistic @relation(fields: [athleteTotalStatisticsId], references: [id])
   athleteTotalStatisticsId String              @unique @map("athlete_total_statistics_id")
+  teamId                   String              @map(name: "team_id")
+  gameId                   String              @map(name: "game_id")
 
+  @@unique([gameId, teamId])
   @@map("nfl_team_statistics")
 }
 
@@ -296,7 +308,14 @@ model PassingStatistics {
   sackYardsLost       Int                  @map("sack_yards_lost")
   adjustedRating      Float                @map("adjusted_rating") //adjustedQBR
   rating              Float                @map("rating") //QBRating
+  teamId              String?              @map(name: "team_id")
+  athleteId           String?              @map(name: "athlete_id")
+  gameId              String               @map(name: "game_id")
   NflAthleteStatistic NflAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("passing_statistics")
 }
 
 model RushingStatistics {
@@ -306,7 +325,14 @@ model RushingStatistics {
   yardsPerAttempt     Float                @map("yards_per_attempt")
   touchdowns          Int
   longest             Int
+  teamId              String?              @map(name: "team_id")
+  athleteId           String?              @map(name: "athlete_id")
+  gameId              String               @map(name: "game_id")
   NflAthleteStatistic NflAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("rushing_statistics")
 }
 
 model ReceivingStatistics {
@@ -317,7 +343,14 @@ model ReceivingStatistics {
   yardsPerReception   Float                @map("yards_per_reception")
   touchdowns          Int
   longest             Int
+  teamId              String?              @map(name: "team_id")
+  athleteId           String?              @map(name: "athlete_id")
+  gameId              String               @map(name: "game_id")
   NflAthleteStatistic NflAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("receiving_statistics")
 }
 
 model FumbleStatistics {
@@ -325,7 +358,14 @@ model FumbleStatistics {
   fumbles             Int
   lost                Int
   recovered           Int
+  teamId              String?              @map(name: "team_id")
+  athleteId           String?              @map(name: "athlete_id")
+  gameId              String               @map(name: "game_id")
   NflAthleteStatistic NflAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("fumble_statistics")
 }
 
 model DefensiveStatistics {
@@ -337,7 +377,14 @@ model DefensiveStatistics {
   passesDefended      Int                  @map("passes_defended")
   qbHits              Int                  @map("qb_hits")
   touchdowns          Int
+  teamId              String?              @map(name: "team_id")
+  athleteId           String?              @map(name: "athlete_id")
+  gameId              String               @map(name: "game_id")
   NflAthleteStatistic NflAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("defensive_statistics")
 }
 
 model InterceptionStatistics {
@@ -345,7 +392,14 @@ model InterceptionStatistics {
   interceptions       Int
   yards               Int
   touchdowns          Int
+  teamId              String?              @map(name: "team_id")
+  athleteId           String?              @map(name: "athlete_id")
+  gameId              String               @map(name: "game_id")
   NflAthleteStatistic NflAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("interception_statistics")
 }
 
 model KickReturnStatistics {
@@ -355,7 +409,14 @@ model KickReturnStatistics {
   yardsPerReturn      Float                @map("yards_per_return")
   touchdowns          Int
   longest             Int
+  teamId              String?              @map(name: "team_id")
+  athleteId           String?              @map(name: "athlete_id")
+  gameId              String               @map(name: "game_id")
   NflAthleteStatistic NflAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("kick_return_statistics")
 }
 
 model PuntReturnStatistics {
@@ -365,7 +426,14 @@ model PuntReturnStatistics {
   yardsPerReturn      Float                @map("yards_per_return")
   touchdowns          Int
   longest             Int
+  teamId              String?              @map(name: "team_id")
+  athleteId           String?              @map(name: "athlete_id")
+  gameId              String               @map(name: "game_id")
   NflAthleteStatistic NflAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("punt_return_statistics")
 }
 
 model KickingStatistics {
@@ -377,7 +445,14 @@ model KickingStatistics {
   extraPointAttempts  Int                  @map("extra_point_attempts")
   extraPointMade      Int                  @map("extra_point_made")
   totalPoints         Int                  @map("total_points")
+  teamId              String?              @map(name: "team_id")
+  athleteId           String?              @map(name: "athlete_id")
+  gameId              String               @map(name: "game_id")
   NflAthleteStatistic NflAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("kicking_statistics")
 }
 
 model PuntingStatistics {
@@ -388,7 +463,14 @@ model PuntingStatistics {
   longest             Int
   puntsInside20       Int                  @map("punts_inside_20")
   touchbacks          Int
+  teamId              String?              @map(name: "team_id")
+  athleteId           String?              @map(name: "athlete_id")
+  gameId              String               @map(name: "game_id")
   NflAthleteStatistic NflAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("punting_statistics")
 }
 
 model FpsAthlete {

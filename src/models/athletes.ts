@@ -46,3 +46,7 @@ export const listAthletesUid = async () => {
     },
   });
 };
+
+export const listAthletes = async () => {
+  return await prisma.athlete.findMany({});
+};

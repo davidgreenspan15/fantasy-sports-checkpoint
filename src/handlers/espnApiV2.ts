@@ -4,11 +4,16 @@ import { espnResponseHandler } from "../services/espnApiV2/responseHandler";
 import { listTeamsWithLeagueSportSlugAndId, upsertTeam } from "../models/teams";
 import { EspnApiV2 } from "../types/EspnApiV2/espnApiV2";
 import { listAllNflGames, upsertTeamGame } from "../models/games";
-import { upsertAthletes, upsertLeagueAthletes } from "../models/athletes";
+import {
+  listAthletes,
+  upsertAthletes,
+  upsertLeagueAthletes,
+} from "../models/athletes";
 import { upsertPositions } from "../models/positions";
 import { upsertDepths } from "../models/depths";
 import { Logger } from "winston";
 import { prisma } from "..";
+import { ListAllNflGamesResponse } from "../types/games";
 
 export const migrateTeams = async () => {
   // Get Leagues
@@ -201,25 +206,18 @@ export const migrateFreeAgentAthletes = async () => {
 };
 
 // Currently Just NFL
-export const migrateGameStatistics = async (logger: Logger) => {
+export const migrateGameStatistics = async (
+  logger: Logger,
+  gameIds: string[]
+) => {
   // Getting Games
-  const games = await listAllNflGames();
+  const games: ListAllNflGamesResponse[] = await listAllNflGames(gameIds);
+  // Getting Athletes
+  const athletes = await listAthletes();
   // Get Game Summary
   const gameSummaryResponse: {
     gameSummary: EspnApiV2.GameSummaryResponse;
-    game: {
-      id: string;
-      espnId: string;
-      Teams: {
-        id: string;
-        espnId: string;
-      }[];
-      League: {
-        id: string;
-        slug: string;
-        sport: string;
-      };
-    };
+    game: ListAllNflGamesResponse;
   }[] = await Promise.all(
     games.map(async (g) => {
       const gameSummary = await espnRequestBuilder.buildGameSummaryRequest(
@@ -230,10 +228,13 @@ export const migrateGameStatistics = async (logger: Logger) => {
       return { gameSummary, game: g };
     })
   );
-  // Handle Game Summary
-  const gameStatistics =
-    espnResponseHandler.handleGameSummaryResponse(gameSummaryResponse);
-  // Save Game Statistics
+  // Handle Game Summary Statistics will be saved in this step
+  const gameStatistics = await espnResponseHandler.handleGameSummaryResponse(
+    gameSummaryResponse,
+    athletes
+  );
+
+  return gameStatistics;
 };
 
 export const dropEspnData = async () => {
