@@ -44,7 +44,7 @@ export const listAllNflGames = async (
 ) => {
   const whereClause = {
     League: {
-      OR: [{ slug: "nba" }, { slug: "nfl" }],
+      OR: [{ slug: "nba" }, { slug: "nfl" }, { slug: "nhl" }],
     },
   };
   if (gameIds.length > 0) {
@@ -60,9 +60,14 @@ export const listAllNflGames = async (
       isComplete: true,
     };
   } else if (isGameStatisticComplete === false) {
-    whereClause["Statistics"] = {
-      isComplete: false,
-    };
+    whereClause["OR"] = [
+      { Statistics: null },
+      {
+        Statistics: {
+          isComplete: false,
+        },
+      },
+    ];
   }
   return await prisma.game.findMany({
     where: whereClause,

@@ -19,7 +19,7 @@ export const upsertLeagueAthletes = async (
     where: {
       espnId_leagueId: {
         leagueId: athlete.League.connect.id,
-        espnId: athlete?.Team?.connect?.id,
+        espnId: athlete?.Team?.connect?.id ?? "",
       },
     },
   });
@@ -27,7 +27,7 @@ export const upsertLeagueAthletes = async (
   if (team) {
     athlete["Team"] = { connect: { id: team.id } };
   } else {
-    athlete.Team = null;
+    athlete.Team = undefined;
   }
 
   return await prisma.athlete.upsert({

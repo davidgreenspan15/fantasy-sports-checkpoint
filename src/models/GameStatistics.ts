@@ -63,11 +63,21 @@ export const getGameStatistic = async (gameId: string) => {
               },
             },
           },
-          NbStatistic: {
+          NbaStatistic: {
             include: {
               AthleteTotalStatistics: {
                 select: {
                   BasketballStatistic: true,
+                },
+              },
+            },
+          },
+          NhlStatistic: {
+            include: {
+              AthleteTotalStatistics: {
+                select: {
+                  SkaterStatistic: true,
+                  GoalieStatistic: true,
                 },
               },
             },
@@ -96,6 +106,12 @@ export const getGameStatistic = async (gameId: string) => {
           NbaStatistic: {
             select: {
               BasketballStatistic: true,
+            },
+          },
+          NhlStatistic: {
+            select: {
+              SkaterStatistic: true,
+              GoalieStatistic: true,
             },
           },
         },

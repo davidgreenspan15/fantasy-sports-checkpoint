@@ -201,7 +201,8 @@ model TeamGameStatistic {
   teamId          String            @map(name: "team_id")
   gameId          String            @map(name: "game_id")
   NflStatistic    NflTeamStatistic?
-  NbStatistic     NbaTeamStatistic?
+  NbaStatistic    NbaTeamStatistic?
+  NhlStatistic    NhlTeamStatistic?
 
   @@unique([gameId, teamId])
   @@unique([gameStatisticId, teamId])
@@ -216,6 +217,7 @@ model AthleteGameStatistic {
   gameStatisticId String               @map(name: "game_statistic_id")
   NflStatistic    NflAthleteStatistic?
   NbaStatistic    NbaAthleteStatistic?
+  NhlStatistic    NhlAthleteStatistic?
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
@@ -272,6 +274,24 @@ model NbaAthleteStatistic {
   @@unique([gameId, athleteId])
   @@unique([gameId, teamId])
   @@map(name: "nba_statistics")
+}
+
+model NhlAthleteStatistic {
+  id                     String                @id @default(uuid())
+  AthleteGameStatistic   AthleteGameStatistic? @relation(fields: [athleteGameStatisticId], references: [id])
+  athleteGameStatisticId String?               @unique @map(name: "athlete_game_statistic_id")
+  NhlTeamStatistic       NhlTeamStatistic?
+  SkaterStatistic        SkaterStatistic       @relation(fields: [skaterStatisticId], references: [id])
+  skaterStatisticId      String                @unique @map(name: "skater_statistic_id")
+  GoalieStatistic        GoalieStatistic       @relation(fields: [goalieStatisticId], references: [id])
+  goalieStatisticId      String                @unique @map(name: "goalie_statistic_id")
+  teamId                 String?               @map(name: "team_id")
+  gameId                 String                @map(name: "game_id")
+  athleteId              String?               @map(name: "athlete_id")
+
+  @@unique([gameId, athleteId])
+  @@unique([gameId, teamId])
+  @@map(name: "nhl_statistics")
 }
 
 model NflTeamStatistic {
@@ -351,6 +371,33 @@ model NbaTeamStatistic {
 
   @@unique([gameId, teamId])
   @@map("nba_team_statistics")
+}
+
+model NhlTeamStatistic {
+  id                       String              @id @default(uuid())
+  blockedShots             Int                 @map("blocked_shots")
+  hits                     Int
+  takeaways                Int
+  shots                    Int
+  powerPlayGoals           Int                 @map("power_play_goals")
+  powerPlayOpportunities   Int                 @map("power_play_opportunities")
+  powerPlayPct             Float               @map("power_play_pct")
+  shortHandedGoals         Int                 @map("short_handed_goals")
+  shootoutGoals            Int                 @map("shootout_goals")
+  faceOffsWon              Int                 @map("face_offs_won")
+  faceOffPct               Float               @map("face_off_pct")
+  giveaways                Int
+  penalties                Int
+  penaltyMinutes           Int                 @map("penalty_minutes")
+  TeamGameStatistic        TeamGameStatistic   @relation(fields: [teamGameStatisticId], references: [id])
+  teamGameStatisticId      String              @unique @map(name: "team_game_statistic_id")
+  AthleteTotalStatistics   NhlAthleteStatistic @relation(fields: [athleteTotalStatisticsId], references: [id])
+  athleteTotalStatisticsId String              @unique @map("athlete_total_statistics_id")
+  teamId                   String              @map(name: "team_id")
+  gameId                   String              @map(name: "game_id")
+
+  @@unique([gameId, teamId])
+  @@map("nhl_team_statistics")
 }
 
 model PassingStatistics {
@@ -557,6 +604,63 @@ model BasketballStatistic {
   @@unique([gameId, teamId])
   @@unique([gameId, athleteId])
   @@map("basketball_statistics")
+}
+
+model SkaterStatistic {
+  id                    String               @id @default(uuid())
+  blockedShots          Int                  @map("blocked_shots")
+  hits                  Int
+  takeaways             Int
+  plusMinus             Int                  @map("plus_minus")
+  timeOnIce             String               @map("time_on_ice")
+  powerPlayTimeOnIce    String               @map("power_play_time_on_ice")
+  shortHandedTimeOnIce  String               @map("short_handed_time_on_ice")
+  evenStrengthTimeOnIce String               @map("even_strength_time_on_ice")
+  shifts                Int
+  goals                 Int
+  yearToDateGoals       Int                  @map("year_to_date_goals")
+  assists               Int
+  shots                 Int
+  shotsMissed           Int                  @map("shots_missed")
+  shootoutGoals         Int                  @map("shootout_goals")
+  faceOffsWon           Int                  @map("face_offs_won")
+  faceOffsLost          Int                  @map("face_offs_lost")
+  faceOffPct            Float                @map("face_off_pct")
+  giveaways             Int
+  penalties             Int
+  penaltyMinutes        Int                  @map("penalty_minutes")
+  teamId                String?              @map(name: "team_id")
+  athleteId             String?              @map(name: "athlete_id")
+  gameId                String               @map(name: "game_id")
+  NhlAthleteStatistic   NhlAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("skater_statistics")
+}
+
+model GoalieStatistic {
+  id                   String               @id @default(uuid())
+  goalsAgainst         Int                  @map("goals_against")
+  shotsAgainst         Int                  @map("shots_against")
+  shootoutSaves        Int                  @map("shootout_saves")
+  shootoutShotsAgainst Int                  @map("shootout_shots_against")
+  saves                Int
+  savePct              Float                @map("save_pct")
+  evenStrengthSaves    Int                  @map("even_strength_saves")
+  powerPlaySaves       Int                  @map("power_play_saves")
+  shortHandedSaves     Int                  @map("short_handed_saves")
+  timeOnIce            String               @map("time_on_ice")
+  yearToDateGoals      Int                  @map("year_to_date_goals")
+  penaltyMinutes       Int                  @map("penalty_minutes")
+  teamId               String?              @map(name: "team_id")
+  athleteId            String?              @map(name: "athlete_id")
+  gameId               String               @map(name: "game_id")
+  NhlAthleteStatistic  NhlAthleteStatistic?
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("goalie_statistics")
 }
 
 model FpsAthlete {

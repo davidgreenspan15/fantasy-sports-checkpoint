@@ -131,7 +131,7 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
   app.get("/showGameStatistics", async (req, res) => {
     try {
       const resp = await getGameStatistic(
-        "f3fd289d-7302-45b0-bdc5-030c529b9750"
+        "ef8a5677-00e6-4299-a179-d975bdfd9af9"
       );
       res.status(200).json({ resp });
     } catch (err) {

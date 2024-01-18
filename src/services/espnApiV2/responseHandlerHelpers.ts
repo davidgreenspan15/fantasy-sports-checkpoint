@@ -19,6 +19,10 @@ import {
   ReceivingStatistics,
   RushingStatistics,
   TeamGameStatistic,
+  NhlTeamStatistic,
+  NhlAthleteStatistic,
+  SkaterStatistic,
+  GoalieStatistic,
 } from "@prisma/client";
 
 import { upsertAthleteGameStatistics } from "../../models/athleteGameStatistics";
@@ -80,6 +84,19 @@ import {
   upsertAthleteBasketballStatistic,
   upsertTeamBasketballStatistic,
 } from "../../models/basketballStatistics";
+import { upsertNhlTeamStatistics } from "../../models/nhlTeamStatistics";
+import {
+  upsertNhlAthleteStatisticStatistics,
+  upsertNhlAthleteTotalStatisticStatistics,
+} from "../../models/nhlAthleteStatistics";
+import {
+  upsertAthleteSkaterStatistic,
+  upsertTeamSkaterStatistic,
+} from "../../models/skaterStatistics";
+import {
+  upsertAthleteGoalieStatistic,
+  upsertTeamGoalieStatistic,
+} from "../../models/goalieStatistics copy";
 
 export const createTeam: (
   team: EspnApiV2.ResponseTeamList.TeamTeam,
@@ -415,6 +432,14 @@ export const createTeamGameStatistics: (
             savedTeamGameStatistic.id
           );
           break;
+        case "nhl":
+          await createNhlTeamStatistics(
+            t.statistics,
+            playerStatistics,
+            team.id,
+            game.id,
+            savedTeamGameStatistic.id
+          );
 
         default:
           break;
@@ -493,6 +518,19 @@ export const createAthleteGameStatistics: (
           athleteGameStatistics["NbaStatistic"] = {
             connect: {
               id: nbaAthleteStatistics?.id ?? "",
+            },
+          };
+          break;
+        case "nhl":
+          const nhlAthleteStatistics = await createNhlAthleteStatistics(
+            athlete.statistics,
+            game.id,
+            athlete.athleteId,
+            null
+          );
+          athleteGameStatistics["NhlStatistic"] = {
+            connect: {
+              id: nhlAthleteStatistics?.id ?? "",
             },
           };
           break;
@@ -875,6 +913,81 @@ const createNbaTeamStatistics: (
   return await upsertNbaTeamStatistics(teamId, gameId, nbaTeamStatistic);
 };
 
+const createNhlTeamStatistics: (
+  teamStatistics: EspnApiV2.ResponseGameSummary.TeamStatistic[],
+  playerStatistics: EspnApiV2.ResponseGameSummary.PlayerStatistic[],
+  teamId: string,
+  gameId: string,
+  savedTeamGameStatisticId: string
+) => Promise<NhlTeamStatistic> = async (
+  teamStatistics,
+  playerStatistics,
+  teamId,
+  gameId,
+  savedTeamGameStatisticId
+) => {
+  const athleteTotalStatistics = await createNhlAthleteStatistics(
+    playerStatistics?.map((p) => {
+      return { name: p.name, stats: p.totals ?? [] };
+    }),
+    gameId,
+    null,
+    teamId
+  );
+  const nhlTeamStatistic: Prisma.NhlTeamStatisticCreateInput = {
+    blockedShots: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "blockedShots")?.displayValue
+    ),
+    hits: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "hits")?.displayValue
+    ),
+    takeaways: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "takeaways")?.displayValue
+    ),
+    shots: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "shotsTotal")?.displayValue
+    ),
+    powerPlayGoals: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "powerPlayGoals")?.displayValue
+    ),
+    powerPlayOpportunities: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "powerPlayOpportunities")
+        ?.displayValue
+    ),
+    powerPlayPct: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "powerPlayPct")?.displayValue
+    ),
+    shortHandedGoals: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "shortHandedGoals")?.displayValue
+    ),
+    shootoutGoals: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "shootoutGoals")?.displayValue
+    ),
+    faceOffsWon: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "faceoffsWon")?.displayValue
+    ),
+    faceOffPct: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "faceoffWinPercent")?.displayValue
+    ),
+    giveaways: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "giveaways")?.displayValue
+    ),
+    penalties: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "penalties")?.displayValue
+    ),
+    penaltyMinutes: stringToNumberOrZero(
+      teamStatistics.find((s) => s.name === "penaltyMinutes")?.displayValue
+    ),
+
+    AthleteTotalStatistics: { connect: { id: athleteTotalStatistics.id } },
+    TeamGameStatistic: { connect: { id: savedTeamGameStatisticId } },
+    teamId: teamId,
+    gameId: gameId,
+  };
+
+  return await upsertNhlTeamStatistics(teamId, gameId, nhlTeamStatistic);
+};
+
 const createNbaAthleteStatistics: (
   athleteStats: { name: string; stats: string[] }[],
   gameId: string,
@@ -911,6 +1024,59 @@ const createNbaAthleteStatistics: (
   if (athleteId) {
     athleteStatistics["athleteId"] = athleteId;
     const savedAthleteStatistics = await upsertNbaAthleteStatisticStatistics(
+      athleteId,
+      gameId,
+      athleteStatistics
+    );
+
+    return savedAthleteStatistics;
+  }
+};
+
+const createNhlAthleteStatistics: (
+  athleteStats: { name: string; stats: string[] }[],
+  gameId: string,
+  athleteId?: string,
+  teamId?: string
+) => Promise<NhlAthleteStatistic> = async (
+  athleteStats,
+  gameId,
+  athleteId,
+  teamId
+) => {
+  const skaterStatistic = await createSkaterStatistics(
+    athleteStats?.find((s) => s.name === "forwards")?.stats ??
+      athleteStats?.find((s) => s.name === "defenses")?.stats,
+    gameId,
+    teamId,
+    athleteId
+  );
+
+  const goalieStatistic = await createGoalieStatistics(
+    athleteStats?.find((s) => s.name === "goalies")?.stats,
+    gameId,
+    teamId,
+    athleteId
+  );
+  const athleteStatistics: Prisma.NhlAthleteStatisticCreateInput = {
+    SkaterStatistic: { connect: { id: skaterStatistic?.id ?? "" } },
+    GoalieStatistic: { connect: { id: goalieStatistic?.id ?? "" } },
+    gameId: gameId,
+  };
+
+  if (teamId) {
+    athleteStatistics["teamId"] = teamId;
+    const savedAthleteStatistics =
+      await upsertNhlAthleteTotalStatisticStatistics(
+        teamId,
+        gameId,
+        athleteStatistics
+      );
+    return savedAthleteStatistics;
+  }
+  if (athleteId) {
+    athleteStatistics["athleteId"] = athleteId;
+    const savedAthleteStatistics = await upsertNhlAthleteStatisticStatistics(
       athleteId,
       gameId,
       athleteStatistics
@@ -1269,6 +1435,87 @@ const createBasketBallStatistics: (
   } else if (athleteId) {
     statistic["athleteId"] = athleteId;
     return await upsertAthleteBasketballStatistic(athleteId, gameId, statistic);
+  }
+};
+
+const createSkaterStatistics: (
+  playerStatistic: string[],
+  gameId: string,
+  teamId?: string,
+  athleteId?: string
+) => Promise<SkaterStatistic> = async (
+  playerStatistic,
+  gameId,
+  teamId,
+  athleteId
+) => {
+  const statistic: Prisma.SkaterStatisticCreateInput = {
+    blockedShots: stringToNumberOrZero(playerStatistic?.[0]),
+    hits: stringToNumberOrZero(playerStatistic?.[1]),
+    takeaways: stringToNumberOrZero(playerStatistic?.[2]),
+    plusMinus: stringToNumberOrZero(playerStatistic?.[3]),
+    timeOnIce: playerStatistic?.[4] ?? "0:00",
+    powerPlayTimeOnIce: playerStatistic?.[5] ?? "0:00",
+    shortHandedTimeOnIce: playerStatistic?.[6] ?? "0:00",
+    evenStrengthTimeOnIce: playerStatistic?.[7] ?? "0:00",
+    shifts: stringToNumberOrZero(playerStatistic?.[8]),
+    goals: stringToNumberOrZero(playerStatistic?.[9]),
+    yearToDateGoals: stringToNumberOrZero(playerStatistic?.[10]),
+    assists: stringToNumberOrZero(playerStatistic?.[11]),
+    shots: stringToNumberOrZero(playerStatistic?.[12]),
+    shotsMissed: stringToNumberOrZero(playerStatistic?.[13]),
+    shootoutGoals: stringToNumberOrZero(playerStatistic?.[14]),
+    faceOffsWon: stringToNumberOrZero(playerStatistic?.[15]),
+    faceOffsLost: stringToNumberOrZero(playerStatistic?.[16]),
+    faceOffPct: stringToNumberOrZero(playerStatistic?.[17]),
+    giveaways: stringToNumberOrZero(playerStatistic?.[18]),
+    penalties: stringToNumberOrZero(playerStatistic?.[19]),
+    penaltyMinutes: stringToNumberOrZero(playerStatistic?.[20]),
+
+    gameId: gameId,
+  };
+  if (teamId) {
+    statistic["teamId"] = teamId;
+    return await upsertTeamSkaterStatistic(teamId, gameId, statistic);
+  } else if (athleteId) {
+    statistic["athleteId"] = athleteId;
+    return await upsertAthleteSkaterStatistic(athleteId, gameId, statistic);
+  }
+};
+
+const createGoalieStatistics: (
+  playerStatistic: string[],
+  gameId: string,
+  teamId?: string,
+  athleteId?: string
+) => Promise<GoalieStatistic> = async (
+  playerStatistic,
+  gameId,
+  teamId,
+  athleteId
+) => {
+  const statistic: Prisma.GoalieStatisticCreateInput = {
+    goalsAgainst: stringToNumberOrZero(playerStatistic?.[0]),
+    shotsAgainst: stringToNumberOrZero(playerStatistic?.[1]),
+    shootoutSaves: stringToNumberOrZero(playerStatistic?.[2]),
+    shootoutShotsAgainst: stringToNumberOrZero(playerStatistic?.[3]),
+    saves: stringToNumberOrZero(playerStatistic?.[4]),
+    savePct: stringToNumberOrZero(playerStatistic?.[5]),
+    evenStrengthSaves: stringToNumberOrZero(playerStatistic?.[6]),
+    powerPlaySaves: stringToNumberOrZero(playerStatistic?.[7]),
+    shortHandedSaves: stringToNumberOrZero(playerStatistic?.[8]),
+    timeOnIce: playerStatistic?.[9] ?? "0:00",
+    yearToDateGoals: stringToNumberOrZero(playerStatistic?.[10]),
+    penaltyMinutes: stringToNumberOrZero(playerStatistic?.[11]),
+
+    gameId: gameId,
+  };
+  if (teamId) {
+    statistic["teamId"] = teamId;
+    return await upsertTeamGoalieStatistic(teamId, gameId, statistic);
+  } else if (athleteId) {
+    statistic["athleteId"] = athleteId;
+    return await upsertAthleteGoalieStatistic(athleteId, gameId, statistic);
   }
 };
 
