@@ -102,6 +102,7 @@ export const espnResponseHandler = {
     leagueWithAthleteEspnIds: ({
       Athletes: {
         espnId: string;
+        imageUrl?: string;
       }[];
     } & {
       id: string;

@@ -114,6 +114,7 @@ export const createTeam: (
     location: team.location,
     isActive: team.isActive,
     uid: team.uid,
+    imageUrl: team.logos?.[0]?.href ?? "",
   };
 };
 
@@ -213,6 +214,7 @@ const createAthlete: (
     number: athlete.jersey,
     isInjured: isInjured,
     injuryStatus: isInjured ? athlete["injuries"][0].status : null,
+    imageUrl: athlete.headshot?.href ?? "",
     Position: {
       connect: {
         espnId_leagueId: { espnId: athlete.position.id, leagueId: leagueId },

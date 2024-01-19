@@ -68,6 +68,7 @@ model Team {
   nickname          String
   displayName       String              @map(name: "display_name")
   shortDisplayName  String              @map(name: "short_display_name")
+  imageUrl          String?             @map(name: "image_url")
   isActive          Boolean             @map(name: "is_active")
   Games             Game[]
   Athletes          Athlete[]
@@ -100,6 +101,7 @@ model Athlete {
   birthday             String?                @map(name: "birthday") // Month/Date/Year no extra 0
   slug                 String
   espnUrl              String                 @default("https://www.espn.com") @map(name: "espn_url")
+  imageUrl             String?                @map(name: "image_url")
   number               String?
   isInjured            Boolean                @map(name: "is_injured")
   injuryStatus         String?                @map(name: "injury_status")

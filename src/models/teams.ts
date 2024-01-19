@@ -28,3 +28,20 @@ export const listTeamsWithLeagueSportSlugAndId = async () => {
     },
   });
 };
+
+const listTeamsWithLeagueIds = async () => {
+  return await prisma.team.findMany({
+    select: {
+      id: true,
+      name: true,
+      abbreviation: true,
+      displayName: true,
+      League: {
+        select: {
+          slug: true,
+          id: true,
+        },
+      },
+    },
+  });
+};

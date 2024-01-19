@@ -31,6 +31,30 @@ export const listLeaguesWithAthleteEspnIds = async () => {
       Athletes: {
         select: {
           espnId: true,
+          imageUrl: true,
+        },
+      },
+    },
+  });
+
+  return ls;
+};
+
+export const listLeaguesWithTeams = async () => {
+  const ls = await prisma.league.findMany({
+    select: {
+      id: true,
+      name: true,
+      shortName: true,
+      abbreviation: true,
+      Teams: {
+        select: {
+          id: true,
+          name: true,
+          abbreviation: true,
+          displayName: true,
+          location: true,
+          imageUrl: true,
         },
       },
     },

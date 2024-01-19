@@ -15,6 +15,7 @@ import {
   reconnectAthletesGamesTeamsToLeagues,
 } from "../util/migrationFixes";
 import { getGameStatistic } from "../models/GameStatistics";
+import { listLeaguesWithTeams } from "../models/leagues";
 
 export const espnApiV2Routes = (app: Express, logger: Logger) => {
   //Run Full Migration
@@ -134,6 +135,15 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
         "ef8a5677-00e6-4299-a179-d975bdfd9af9"
       );
       res.status(200).json({ resp });
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json(err);
+    }
+  });
+  app.get("/getLeaguesWithTeams", async (req, res) => {
+    try {
+      const resp = await listLeaguesWithTeams();
+      res.status(200).json(resp);
     } catch (err) {
       logger.error(err);
       res.status(500).json(err);
