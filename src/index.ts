@@ -10,7 +10,12 @@ import { espnApiV2Routes } from "./routes/espnApiV2";
 import { PrismaClient } from "@prisma/client";
 
 export const prisma = new PrismaClient({
-  // log: ["info", "warn", "error"],
+  log: [
+    // "query",
+    // "info",
+    // "warn",
+    // "error"
+  ],
 });
 
 const app = express();

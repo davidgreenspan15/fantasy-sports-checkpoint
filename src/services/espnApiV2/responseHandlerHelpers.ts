@@ -23,6 +23,7 @@ import {
   NhlAthleteStatistic,
   SkaterStatistic,
   GoalieStatistic,
+  Team,
 } from "@prisma/client";
 
 import { upsertAthleteGameStatistics } from "../../models/athleteGameStatistics";
@@ -138,20 +139,15 @@ export const createGame: (
     Season: {
       connectOrCreate: {
         where: {
-          yearNumber_type: {
-            yearNumber: event.season.year,
+          displayYear_type: {
+            displayYear: event.season.displayName,
             type: event.seasonType.type,
           },
         },
         create: {
           type: event.seasonType.type,
           name: event.seasonType.name,
-          Year: {
-            connectOrCreate: {
-              where: { year: event.season.year },
-              create: { year: event.season.year },
-            },
-          },
+          displayYear: event.season.displayName,
         },
       },
     },
@@ -161,14 +157,15 @@ export const createGame: (
 export const createTeamAthlete: (
   athlete: EspnApiV2.ResponseTeamRoster.Item,
   teamId: string,
-  leagueId: string
+  leagueId: string,
+  teamRosterId: string
 ) => {
   teamAthlete: Prisma.AthleteCreateInput;
   positions: Prisma.PositionCreateInput[];
-} = (athlete, teamId, leagueId) => {
+} = (athlete, teamId, leagueId, teamRosterId) => {
   const positions: Prisma.PositionCreateInput[] = [];
   const parent = athlete.position.parent;
-  const teamAthlete = createAthlete(athlete, teamId, leagueId);
+  const teamAthlete = createAthlete(athlete, teamId, leagueId, teamRosterId);
   positions.push(createPosition(athlete.position, leagueId));
   if (parent) {
     positions.push(createPosition(parent, leagueId));
@@ -182,14 +179,14 @@ const createAthlete: (
     | EspnApiV2.ResponseLeagueAthlete.Athlete
     | EspnApiV2.ResponseTeamRoster.Item,
   teamId: string,
-  leagueId: string
-) => Prisma.AthleteCreateInput = (athlete, teamId, leagueId) => {
+  leagueId: string,
+  teamRosterId?: string
+) => Prisma.AthleteCreateInput = (athlete, teamId, leagueId, teamRosterId) => {
   const isInjured = athlete["injuries"]?.length > 0;
 
   const dob = new Date(athlete.dateOfBirth);
   const validDate = isValidDate(dob);
-
-  return {
+  const newAthlete = {
     Team: { connect: { id: teamId } },
     League: { connect: { id: leagueId } },
     uid: athlete.uid,
@@ -221,6 +218,10 @@ const createAthlete: (
       },
     },
   };
+  if (teamRosterId) {
+    newAthlete["Roster"] = { connect: { id: teamRosterId } };
+  }
+  return newAthlete;
 };
 
 const isValidDate = (date: Date) => {
@@ -371,6 +372,65 @@ export const mapIdenticalGames: (
   return Object.values(gameHash).map((g) => g);
 };
 
+interface GameMap {
+  awayTeamId?: string;
+  homeTeamId?: string;
+  event: EspnApiV2.ResponseTeamSchedule.Event;
+  leagueId: string;
+  season: EspnApiV2.ResponseTeamSchedule.RequestedSeasonClass;
+}
+export const mapIdenticalYearlyGames: (
+  weeklyScheduleResponse: EspnApiV2.LeagueYearlyScheduleResponse,
+  teams: Team[]
+) => GameMap[] = (weeklyScheduleResponse, teams) => {
+  return weeklyScheduleResponse.events
+    .filter((t) => t.season.year === 2023 && t.season.type === 2)
+    .map((e) => {
+      const homeTeamId = teams.find(
+        (t) =>
+          t.espnId ===
+          e.competitions[0].competitors.find((c) => c.homeAway === "home")?.id
+      )?.id;
+      const awayTeamId = teams.find(
+        (t) =>
+          t.espnId ===
+          e.competitions[0].competitors.find((c) => c.homeAway === "away")?.id
+      )?.id;
+      e["seasonType"] = {
+        id: "2",
+        type: 2,
+        name: "Regular Season",
+        abbreviation: "reg",
+      };
+      e["timeValid"] = true;
+      //@ts-ignore
+      const event: EspnApiV2.ResponseTeamSchedule.Event = {
+        ...e,
+        seasonType: {
+          id: "2",
+          type: 2,
+          name: EspnApiV2.ResponseTeamSchedule.SeasonTypeName.RegularSeason,
+          abbreviation:
+            EspnApiV2.ResponseTeamSchedule.SeasonTypeAbbreviation.Reg,
+        },
+        timeValid: true,
+        season: {
+          ...e.season,
+          displayName: "2023",
+        },
+      };
+      const gameMap: GameMap = {
+        homeTeamId,
+        awayTeamId,
+        leagueId: "848ea1b8-47bf-4c8b-9936-674cbc2ec264",
+        event,
+        //@ts-ignore
+        season: event.season,
+      };
+      return gameMap;
+    });
+};
+
 export const createGameStatistic: (gameSummaryResponse: {
   gameSummary: EspnApiV2.GameSummaryResponse;
   game: ListAllNflGamesResponse;
@@ -390,21 +450,28 @@ export const createGameStatistic: (gameSummaryResponse: {
 export const createTeamGameStatistics: (
   boxscore: EspnApiV2.ResponseGameSummary.Boxscore,
   game: ListAllNflGamesResponse,
-  savedGameStatisticId: string
+  savedGameStatisticId: string,
+  scoringPlay:
+    | EspnApiV2.ResponseGameSummary.ScoringPlay
+    | EspnApiV2.ResponseGameSummary.Play
 ) => Promise<TeamGameStatistic[]> = async (
   boxscore,
   game,
-  savedGameStatisticId
+  savedGameStatisticId,
+  scoringPlay
 ) => {
   const savedTeamGameStatistics = Promise.all(
     boxscore.teams.map(async (t) => {
       const team = game.Teams.find((gt) => gt.espnId === t.team.id);
+      const isHomeTeam = game.homeTeamId === team.id;
       const playerStatistics = boxscore.players?.find((p) => {
         return game.Teams.map((t) => t.espnId).includes(p.team.id);
       })?.statistics;
 
       const teamGameStatistics: Prisma.TeamGameStatisticCreateInput = {
         Team: { connect: { id: team.id } },
+        teamScore:
+          (isHomeTeam ? scoringPlay.homeScore : scoringPlay.awayScore) ?? 0,
         gameId: game.id,
         GameStatistic: { connect: { id: savedGameStatisticId } },
       };
@@ -1279,8 +1346,8 @@ const createKickReturnStatistics: (
     returns: stringToNumberOrZero(playerStatistic?.[0]),
     yards: stringToNumberOrZero(playerStatistic?.[1]),
     yardsPerReturn: stringToNumberOrZero(playerStatistic?.[2]),
-    touchdowns: stringToNumberOrZero(playerStatistic?.[3]),
-    longest: stringToNumberOrZero(playerStatistic?.[4]),
+    longest: stringToNumberOrZero(playerStatistic?.[3]),
+    touchdowns: stringToNumberOrZero(playerStatistic?.[4]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1311,8 +1378,8 @@ const createPuntReturnStatistics: (
     returns: stringToNumberOrZero(playerStatistic?.[0]),
     yards: stringToNumberOrZero(playerStatistic?.[1]),
     yardsPerReturn: stringToNumberOrZero(playerStatistic?.[2]),
-    touchdowns: stringToNumberOrZero(playerStatistic?.[3]),
-    longest: stringToNumberOrZero(playerStatistic?.[4]),
+    longest: stringToNumberOrZero(playerStatistic?.[3]),
+    touchdowns: stringToNumberOrZero(playerStatistic?.[4]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1343,14 +1410,14 @@ const createKickingStatistics: (
     fieldGoalAttempts: stringToNumberOrZero(
       playerStatistic?.[0]?.split("/")?.[0]
     ),
-    fieldGoalMade: stringToNumberOrZero(playerStatistic?.[1]?.split("/")?.[1]),
-    fieldGoalPct: stringToNumberOrZero(playerStatistic?.[2]),
-    longest: stringToNumberOrZero(playerStatistic?.[3]),
+    fieldGoalMade: stringToNumberOrZero(playerStatistic?.[0]?.split("/")?.[1]),
+    fieldGoalPct: stringToNumberOrZero(playerStatistic?.[1]),
+    longest: stringToNumberOrZero(playerStatistic?.[2]),
     extraPointAttempts: stringToNumberOrZero(
-      playerStatistic?.[4]?.split("-")?.[0]
+      playerStatistic?.[3]?.split("-")?.[0]
     ),
-    extraPointMade: stringToNumberOrZero(playerStatistic?.[4]?.split("-")?.[1]),
-    totalPoints: stringToNumberOrZero(playerStatistic?.[5]),
+    extraPointMade: stringToNumberOrZero(playerStatistic?.[3]?.split("-")?.[1]),
+    totalPoints: stringToNumberOrZero(playerStatistic?.[4]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1377,9 +1444,9 @@ const createPuntingStatistics: (
     punts: stringToNumberOrZero(playerStatistic?.[0]),
     yards: stringToNumberOrZero(playerStatistic?.[1]),
     yardsPerPunt: stringToNumberOrZero(playerStatistic?.[2]),
-    longest: stringToNumberOrZero(playerStatistic?.[3]),
+    touchbacks: stringToNumberOrZero(playerStatistic?.[3]),
     puntsInside20: stringToNumberOrZero(playerStatistic?.[4]),
-    touchbacks: stringToNumberOrZero(playerStatistic?.[5]),
+    longest: stringToNumberOrZero(playerStatistic?.[5]),
     gameId: gameId,
   };
   if (teamId) {

@@ -1,4 +1,4 @@
-import { Athlete, Prisma } from "@prisma/client";
+import { Athlete, Prisma, Roster, Team } from "@prisma/client";
 
 import { EspnApiV2 } from "../../types/EspnApiV2/espnApiV2";
 import { ListAllNflGamesResponse } from "../../types/games";
@@ -12,8 +12,10 @@ import {
   createTeamAthlete,
   createTeamGameStatistics,
   mapIdenticalGames,
+  mapIdenticalYearlyGames,
 } from "./responseHandlerHelpers";
 import { updateGameStatisticsIsComplete } from "../../models/GameStatistics";
+import { upsertRosters } from "../../models/rosters";
 
 export const espnResponseHandler = {
   handleSportsTeamsResponse: (
@@ -51,7 +53,7 @@ export const espnResponseHandler = {
 
     return games;
   },
-  handleTeamRosterResponse: (
+  handleTeamRosterResponse: async (
     rosterResponse: {
       roster: EspnApiV2.TeamRosterResponse;
       teamId: string;
@@ -60,23 +62,52 @@ export const espnResponseHandler = {
   ) => {
     const teamAthletes: Prisma.AthleteCreateInput[] = [];
     const parentPositions: Prisma.PositionCreateInput[][] = [];
-
-    rosterResponse.forEach((sr) => {
-      sr.roster.athletes.forEach((a) => {
-        a.items?.forEach((i) => {
-          const { teamAthlete, positions } = createTeamAthlete(
-            i,
-            sr.teamId,
-            sr.leagueId
-          );
-          teamAthletes.push(teamAthlete);
-          if (positions) {
-            parentPositions.push(positions);
-          }
+    const savedTeamRosters: Roster[] = [];
+    await Promise.all(
+      rosterResponse.map(async (sr) => {
+        const teamRoster: Prisma.RosterCreateInput = {
+          Team: { connect: { id: sr.teamId } },
+          League: { connect: { id: sr.leagueId } },
+          Season: {
+            connectOrCreate: {
+              where: {
+                displayYear_type: {
+                  displayYear: sr.roster.season.displayName,
+                  type: sr.roster.season.type,
+                },
+              },
+              create: {
+                type: sr.roster.season.type,
+                name: sr.roster.season.name,
+                displayYear: sr.roster.season.displayName,
+              },
+            },
+          },
+          seasonYearDisplayNumberAndType: `${sr.roster.season.displayName}_${sr.roster.season.type}`,
+        };
+        const savedTeamRoster = await upsertRosters(teamRoster);
+        sr.roster.athletes.forEach((a) => {
+          a.items?.forEach((i) => {
+            const { teamAthlete, positions } = createTeamAthlete(
+              i,
+              sr.teamId,
+              sr.leagueId,
+              savedTeamRoster?.id
+            );
+            teamAthletes.push(teamAthlete);
+            if (positions) {
+              parentPositions.push(positions);
+            }
+          });
         });
-      });
-    });
-    return { teamAthletes, parentPositions: parentPositions.flat() };
+        savedTeamRosters.push(savedTeamRoster);
+      })
+    );
+    return {
+      teamAthletes,
+      parentPositions: parentPositions.flat(),
+      savedTeamRosters,
+    };
   },
   handleTeamDepthResponse: (
     depthChartResponse: {
@@ -174,11 +205,13 @@ export const espnResponseHandler = {
     return Promise.all(
       gameSummaryResponse.map(async (gsr) => {
         const gameStatistic = await createGameStatistic(gsr);
-
+        const scoringPlays =
+          gsr.gameSummary?.scoringPlays ?? gsr.gameSummary?.plays ?? [];
         const teamGameStatistics = await createTeamGameStatistics(
           gsr.gameSummary.boxscore,
           gsr.game,
-          gameStatistic.id
+          gameStatistic.id,
+          scoringPlays[scoringPlays.length - 1]
         );
         const athleteGameStatistics = await createAthleteGameStatistics(
           gsr.gameSummary.boxscore,
@@ -193,5 +226,21 @@ export const espnResponseHandler = {
         return { teamGameStatistics, gameStatistic, athleteGameStatistics };
       })
     );
+  },
+  handleLeagueYearlyScheduleResponse: (
+    leagueYearlyScheduleResponse: EspnApiV2.LeagueYearlyScheduleResponse,
+    teams: Team[]
+  ) => {
+    const games: Prisma.GameCreateInput[] = [];
+    const uniqueGames = mapIdenticalYearlyGames(
+      leagueYearlyScheduleResponse,
+      teams
+    );
+    uniqueGames.forEach((g) => {
+      const game = createGame(g.event, g.homeTeamId, g.leagueId, g.awayTeamId);
+      games.push(game);
+    });
+
+    return games;
   },
 };

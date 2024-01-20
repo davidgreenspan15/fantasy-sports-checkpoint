@@ -125,4 +125,15 @@ export const espnRequestBuilder = {
       throw { ...err, espnApiRequestError: true } as EspnError;
     }
   },
+  buildOldGamesByWeekAndYear: async () => {
+    const url = `${baseUrl}/football/nfl/scoreboard?limit=1000&dates=2024&seasontype=2}`;
+    try {
+      const response = await axios.get<EspnApiV2.LeagueYearlyScheduleResponse>(
+        url
+      );
+      return response.data;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
 };

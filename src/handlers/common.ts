@@ -61,9 +61,8 @@ export const todaysBirthday = async () => {
       },
     },
   });
-
   const playerWithBirthdays = players
-    .filter((p) => p.Team.Games.length > 0)
+    .filter((p) => p.Team?.Games.length > 0)
     .map((p) => {
       p.Team.Games.map((g) => {
         g["Formatted Dated"] = g.date.toLocaleString();

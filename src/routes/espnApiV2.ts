@@ -2,20 +2,19 @@ import { Express } from "express";
 import { Logger } from "winston";
 
 import {
-  // dropEspnData,
   migrateDepths,
   migrateFreeAgentAthletes,
-  migrateTeamAthletes,
   migrateGames,
-  migrateTeams,
   migrateGameStatistics,
+  migrateMissingNflGames,
+  migrateTeamAthletes,
+  migrateTeams,
 } from "../handlers/espnApiV2";
+import { getGameStatistic } from "../models/GameStatistics";
 import {
   connectSeasonsToGames,
-  reconnectAthletesGamesTeamsToLeagues,
+  updateNflGameSeason,
 } from "../util/migrationFixes";
-import { getGameStatistic } from "../models/GameStatistics";
-import { listLeaguesWithTeams } from "../models/leagues";
 
 export const espnApiV2Routes = (app: Express, logger: Logger) => {
   //Run Full Migration
@@ -99,12 +98,7 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
   app.get("/migrateGameStatistics", async (req, res) => {
     try {
       const gameIds = req.body.gameIds ?? [];
-      const gameStatistics = await migrateGameStatistics(
-        logger,
-        gameIds,
-        true,
-        false
-      );
+      const gameStatistics = await migrateGameStatistics(gameIds, true, false);
       res.status(200).json({ gameStatistics });
     } catch (err) {
       logger.error(err);
@@ -132,7 +126,7 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
   app.get("/showGameStatistics", async (req, res) => {
     try {
       const resp = await getGameStatistic(
-        "ef8a5677-00e6-4299-a179-d975bdfd9af9"
+        "363112b8-b763-444d-8156-463670411624"
       );
       res.status(200).json({ resp });
     } catch (err) {
@@ -140,10 +134,23 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
       res.status(500).json(err);
     }
   });
-  app.get("/getLeaguesWithTeams", async (req, res) => {
+
+  // Incase Previous Season Deleted
+  // Currently only works for NFL. Must update Year in handle request and update map if you want to change year or type
+  app.get("/migrateMissingNflGames", async (req, res) => {
     try {
-      const resp = await listLeaguesWithTeams();
-      res.status(200).json(resp);
+      const resp = await migrateMissingNflGames();
+      res.status(200).json({ resp });
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json(err);
+    }
+  });
+
+  app.get("/updateNflGameSeasons", async (req, res) => {
+    try {
+      const resp = await updateNflGameSeason();
+      res.status(200).json({ resp });
     } catch (err) {
       logger.error(err);
       res.status(500).json(err);

@@ -22,3 +22,18 @@ export const upsertPositions = async (position: Prisma.PositionCreateInput) => {
     }
   }
 };
+
+export const listParentPositions = async () => {
+  return await prisma.position.findMany({
+    where: {
+      parentPositionId: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      abbreviation: true,
+      displayName: true,
+      espnId: true,
+    },
+  });
+};

@@ -158,3 +158,27 @@ export const connectSeasonsToGames = async () => {
 
   return { connectedMlbGames, connectedOtherGames };
 };
+
+export const updateNflGameSeason = async () => {
+  const newSeason = await prisma.season.create({
+    data: {
+      displayYear: "2023",
+      type: 2,
+      name: "Regular Season",
+    },
+  });
+  return await prisma.game.updateMany({
+    where: {
+      League: {
+        slug: "nfl",
+      },
+      Season: {
+        type: 2,
+        displayYear: "2023-24",
+      },
+    },
+    data: {
+      seasonId: newSeason.id,
+    },
+  });
+};

@@ -45,3 +45,10 @@ const listTeamsWithLeagueIds = async () => {
     },
   });
 };
+export const listTeams = async () => {
+  return await prisma.team.findMany({
+    where: {
+      League: { slug: "nfl" },
+    },
+  });
+};

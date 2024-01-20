@@ -10,29 +10,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Year {
-  id        String    @id @default(uuid())
-  year      Int       @unique
-  Seasons   Season[]
-  // Roster
-  // Depth Chart
-  createdAt DateTime  @default(now()) @map(name: "created_at")
-  updatedAt DateTime? @map(name: "updated_at")
-
-  @@map(name: "years")
-}
-
 model Season {
-  id         String    @id @default(uuid())
-  name       String //Preseason, Regular, Postseason, Offseason
-  type       Int // 1=Preseaons ,2=Regular,3=Postseason,4=Offseason
-  Games      Game[]
-  Year       Year      @relation(fields: [yearNumber], references: [year])
-  yearNumber Int       @map(name: "year_number")
-  createdAt  DateTime  @default(now()) @map(name: "created_at")
-  updatedAt  DateTime? @map(name: "updated_at")
+  id          String    @id @default(uuid())
+  name        String //Preseason, Regular, Postseason, Offseason
+  type        Int // 1=Preseaons ,2=Regular,3=Postseason,4=Offseason
+  Games       Game[]
+  Roster      Roster[]
+  displayYear String    @map(name: "display_year")
+  createdAt   DateTime  @default(now()) @map(name: "created_at")
+  updatedAt   DateTime? @map(name: "updated_at")
 
-  @@unique([yearNumber, type])
+  @@unique([displayYear, type])
   @@map(name: "seasons")
 }
 
@@ -49,6 +37,7 @@ model League {
   Games        Game[]
   Positions    Position[]
   Depths       Depth[]
+  Roster       Roster[]
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
@@ -73,6 +62,7 @@ model Team {
   Games             Game[]
   Athletes          Athlete[]
   TeamGameStatistic TeamGameStatistic[]
+  Roster            Roster[]
   League            League              @relation(fields: [leagueId], references: [id])
   leagueId          String              @map(name: "league_id")
 
@@ -114,12 +104,32 @@ model Athlete {
   positionId           String                 @map(name: "position_id")
   League               League                 @relation(fields: [leagueId], references: [id])
   leagueId             String                 @map(name: "league_id")
+  Roster               Roster?                @relation(fields: [rosterId], references: [id])
+  rosterId             String?
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
 
   @@unique([espnId, leagueId])
   @@map(name: "athletes")
+}
+
+model Roster {
+  id                             String    @id @default(uuid())
+  Athletes                       Athlete[]
+  Team                           Team      @relation(fields: [teamId], references: [id])
+  teamId                         String    @map(name: "team_id")
+  Season                         Season    @relation(fields: [seasonId], references: [id])
+  seasonId                       String    @map(name: "season_id")
+  seasonYearDisplayNumberAndType String    @map(name: "season_year_number_and_type")
+  League                         League    @relation(fields: [leagueId], references: [id])
+  leagueId                       String    @map(name: "league_id")
+
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime? @map(name: "updated_at")
+
+  @@unique([teamId, leagueId, seasonYearDisplayNumberAndType])
+  @@map(name: "rosters")
 }
 
 model Depth {
@@ -205,6 +215,7 @@ model TeamGameStatistic {
   NflStatistic    NflTeamStatistic?
   NbaStatistic    NbaTeamStatistic?
   NhlStatistic    NhlTeamStatistic?
+  teamScore       Int               @default(0) @map(name: "team_score")
 
   @@unique([gameId, teamId])
   @@unique([gameStatisticId, teamId])

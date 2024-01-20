@@ -75,6 +75,8 @@ export const listAllNflGames = async (
       id: true,
       espnId: true,
       isComplete: true,
+      awayTeamId: true,
+      homeTeamId: true,
       League: {
         select: {
           slug: true,
@@ -135,5 +137,39 @@ export const listAllNflGames = async (
         },
       },
     },
+  });
+};
+
+export const listTeamGames = async (
+  seasonDisplayName: string,
+  seasonType: number,
+  teamId?: string
+) => {
+  const select = {
+    id: true,
+    espnId: true,
+    date: true,
+    name: true,
+    shortName: true,
+    week: true,
+    isComplete: true,
+    homeTeamId: true,
+    awayTeamId: true,
+  };
+  const where = {
+    Season: { displayYear: seasonDisplayName, type: seasonType },
+  };
+
+  if (!teamId) {
+    return await prisma.game.findMany({
+      where,
+      select,
+      orderBy: { date: "asc" },
+    });
+  }
+  return await prisma.game.findMany({
+    where: { ...where, Teams: { some: { id: teamId } } },
+    select,
+    orderBy: { date: "asc" },
   });
 };

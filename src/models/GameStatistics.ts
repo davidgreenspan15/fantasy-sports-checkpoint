@@ -26,7 +26,7 @@ export const updateGameStatisticsIsComplete = async (id: string) => {
 };
 
 export const getGameStatistic = async (gameId: string) => {
-  return await prisma.gameStatistic.findUnique({
+  const gameStatistics = await prisma.gameStatistic.findUnique({
     where: {
       gameId: gameId,
     },
@@ -36,15 +36,17 @@ export const getGameStatistic = async (gameId: string) => {
           id: true,
           name: true,
           espnId: true,
+          seasonId: true,
+          Teams: {
+            select: { id: true },
+          },
         },
       },
+
       TeamGameStatistics: {
         select: {
-          Team: {
-            select: {
-              displayName: true,
-            },
-          },
+          teamScore: true,
+          teamId: true,
           NflStatistic: {
             include: {
               AthleteTotalStatistics: {
@@ -86,9 +88,7 @@ export const getGameStatistic = async (gameId: string) => {
       },
       AthleteGameStatistics: {
         select: {
-          Athlete: {
-            select: { fullName: true, Team: { select: { displayName: true } } },
-          },
+          athleteId: true,
           NflStatistic: {
             select: {
               PassingStatistics: true,
@@ -118,4 +118,48 @@ export const getGameStatistic = async (gameId: string) => {
       },
     },
   });
+  const rosters = await prisma.roster.findMany({
+    where: {
+      Season: {
+        id: gameStatistics?.Game?.seasonId,
+      },
+      OR: [
+        {
+          Team: {
+            id: gameStatistics?.Game?.Teams[0].id,
+          },
+        },
+
+        {
+          Team: {
+            id: gameStatistics?.Game?.Teams[1].id,
+          },
+        },
+      ],
+    },
+    select: {
+      Team: {
+        select: {
+          id: true,
+          displayName: true,
+        },
+      },
+      Athletes: {
+        select: {
+          id: true,
+          displayName: true,
+          imageUrl: true,
+          number: true,
+          Position: {
+            select: {
+              displayName: true,
+              parentPositionId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return { gameStatistics, rosters };
 };

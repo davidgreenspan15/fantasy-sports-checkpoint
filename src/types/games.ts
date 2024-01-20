@@ -2,6 +2,8 @@ export interface ListAllNflGamesResponse {
   id: string;
   espnId: string;
   isComplete: boolean;
+  awayTeamId: string;
+  homeTeamId: string;
   League: {
     id: string;
     slug: string;

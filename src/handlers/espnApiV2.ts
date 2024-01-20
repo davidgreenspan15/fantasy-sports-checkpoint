@@ -1,7 +1,11 @@
 import { listLeagues, listLeaguesWithAthleteEspnIds } from "../models/leagues";
 import { espnRequestBuilder } from "../services/espnApiV2/requestBuilder";
 import { espnResponseHandler } from "../services/espnApiV2/responseHandler";
-import { listTeamsWithLeagueSportSlugAndId, upsertTeam } from "../models/teams";
+import {
+  listTeams,
+  listTeamsWithLeagueSportSlugAndId,
+  upsertTeam,
+} from "../models/teams";
 import { EspnApiV2 } from "../types/EspnApiV2/espnApiV2";
 import { listAllNflGames, upsertTeamGame } from "../models/games";
 import {
@@ -14,6 +18,7 @@ import { upsertDepths } from "../models/depths";
 import { Logger } from "winston";
 import { prisma } from "..";
 import { ListAllNflGamesResponse } from "../types/games";
+import { upsertRosters } from "../models/rosters";
 
 export const migrateTeams = async () => {
   // Get Leagues
@@ -96,8 +101,8 @@ export const migrateTeamAthletes = async () => {
     })
   );
   // Handling Team Roster
-  const { teamAthletes, parentPositions } =
-    espnResponseHandler.handleTeamRosterResponse(rosterResponse);
+  const { teamAthletes, parentPositions, savedTeamRosters } =
+    await espnResponseHandler.handleTeamRosterResponse(rosterResponse);
 
   // Saving Parent Positions
   const savedParentPositions = await Promise.all(
@@ -112,7 +117,7 @@ export const migrateTeamAthletes = async () => {
     })
   );
 
-  return { savedAthletes, savedParentPositions };
+  return { savedParentPositions, savedAthletes, savedTeamRosters };
 };
 
 export const migrateDepths = async (logger: Logger) => {
@@ -205,9 +210,7 @@ export const migrateFreeAgentAthletes = async () => {
   return { savedAthletes, savedPositions };
 };
 
-// Currently Just NFL
 export const migrateGameStatistics = async (
-  logger: Logger,
   gameIds: string[],
   includeCompletedGames?: boolean,
   includeCompletedGameStatistics?: boolean
@@ -241,6 +244,27 @@ export const migrateGameStatistics = async (
   );
 
   return gameStatistics;
+};
+
+export const migrateMissingNflGames = async () => {
+  // Getting Teams
+  const teams = await listTeams();
+  // Getting League Yearly Schedules
+  const weeklyScheduleResponse: EspnApiV2.LeagueYearlyScheduleResponse =
+    await espnRequestBuilder.buildOldGamesByWeekAndYear();
+
+  // Handling Team League Yearly Schedules
+  const leagueYearlyScheduleResponse =
+    espnResponseHandler.handleLeagueYearlyScheduleResponse(
+      weeklyScheduleResponse,
+      teams
+    );
+  // Saving Team Games
+  return await Promise.all(
+    leagueYearlyScheduleResponse.map(async (s) => {
+      return await upsertTeamGame(s);
+    })
+  );
 };
 
 export const dropEspnData = async () => {
