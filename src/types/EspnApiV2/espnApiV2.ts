@@ -564,7 +564,7 @@ export namespace EspnApiV2 {
       timestamp: string;
       status: string;
       season: Season;
-      athletes: Athlete[];
+      athletes: Athlete[] | Item[];
       coach: Coach[];
       team: Team;
     }

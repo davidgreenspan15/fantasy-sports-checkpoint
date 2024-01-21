@@ -121,21 +121,19 @@ export const createTeam: (
 
 export const createGame: (
   event: EspnApiV2.ResponseTeamSchedule.Event,
-  homeTeamId: string,
   leagueId: string,
-  awayTeamId: string
-) => Prisma.GameCreateInput = (event, homeTeamId, leagueId, awayTeamId) => {
-  return {
+  homeTeamId?: string,
+  awayTeamId?: string
+) => Prisma.GameCreateInput = (event, leagueId, homeTeamId, awayTeamId) => {
+  const game: Prisma.GameCreateInput = {
     espnId: event.id,
     date: new Date(event.date),
     name: event.name,
     shortName: event.shortName,
     week: event.week?.number ?? null,
     isComplete: event.competitions?.[0]?.status?.type?.completed ?? false,
-    awayTeamId,
-    homeTeamId,
     League: { connect: { id: leagueId } },
-    Teams: { connect: [{ id: homeTeamId }, { id: awayTeamId }] },
+    Teams: { connect: [] },
     Season: {
       connectOrCreate: {
         where: {
@@ -152,6 +150,18 @@ export const createGame: (
       },
     },
   };
+  if (homeTeamId) {
+    game["homeTeamId"] = homeTeamId;
+    (game.Teams.connect as Prisma.TeamWhereUniqueInput[]).push({
+      id: homeTeamId,
+    });
+  } else if (awayTeamId) {
+    game["awayTeamId"] = awayTeamId;
+    (game.Teams.connect as Prisma.TeamWhereUniqueInput[]).push({
+      id: awayTeamId,
+    });
+  }
+  return game;
 };
 
 export const createTeamAthlete: (
@@ -1414,9 +1424,9 @@ const createKickingStatistics: (
     fieldGoalPct: stringToNumberOrZero(playerStatistic?.[1]),
     longest: stringToNumberOrZero(playerStatistic?.[2]),
     extraPointAttempts: stringToNumberOrZero(
-      playerStatistic?.[3]?.split("-")?.[0]
+      playerStatistic?.[3]?.split("/")?.[0]
     ),
-    extraPointMade: stringToNumberOrZero(playerStatistic?.[3]?.split("-")?.[1]),
+    extraPointMade: stringToNumberOrZero(playerStatistic?.[3]?.split("/")?.[1]),
     totalPoints: stringToNumberOrZero(playerStatistic?.[4]),
     gameId: gameId,
   };

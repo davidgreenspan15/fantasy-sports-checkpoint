@@ -173,3 +173,14 @@ export const listTeamGames = async (
     orderBy: { date: "asc" },
   });
 };
+
+export const updateGameIsComplete = async (id: string) => {
+  return await prisma.game.update({
+    where: {
+      id: id,
+    },
+    data: {
+      isComplete: true,
+    },
+  });
+};

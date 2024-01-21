@@ -3,12 +3,13 @@ import { Logger } from "winston";
 
 import { getDraftBoard, resetData, todaysBirthday } from "../handlers/common";
 import { prisma } from "..";
-import { listTeamAthletes } from "../models/athletes";
+import { getAthletesById, listTeamAthletes } from "../models/athletes";
 import { listParentPositions } from "../models/positions";
 import { listLeaguesWithTeams } from "../models/leagues";
 import { listTeamGames } from "../models/games";
 import { getGameStatistic } from "../models/GameStatistics";
 import { migrateGameStatistics } from "../handlers/espnApiV2";
+import { listTeamRoster } from "../models/rosters";
 
 export const commonRoutes = (app: Express, logger: Logger) => {
   app.get("/resetData", async (req, res) => {
@@ -71,23 +72,27 @@ export const commonRoutes = (app: Express, logger: Logger) => {
     try {
       const gameId = req.body.gameId;
       const shouldMigrateGame = req.body.shouldMigrateGame;
-      const parentPositions = await listParentPositions();
 
       if (shouldMigrateGame) {
-        await migrateGameStatistics([gameId], undefined, false);
+        await migrateGameStatistics([gameId], undefined, undefined);
       }
-      const { gameStatistics, rosters } = await getGameStatistic(gameId);
-      const mappedGameStatistics = [];
-      rosters.forEach((r) => {
-        const team = {
-          id: r.Team.id,
-          displayName: r.Team.displayName,
-          TeamStatistics: gameStatistics.TeamGameStatistics.find((tgs) => {
-            return tgs.teamId === r.Team.id;
-          }),
-        };
+      const parentPositions = await listParentPositions();
+      const gameStatistics = await getGameStatistic(gameId);
+      const athletes = await getAthletesById(
+        gameStatistics.AthleteGameStatistics.map((ags) => ags.athleteId)
+      );
 
-        r.Athletes.forEach((a) => {
+      const mappedGameStatistics = [];
+      gameStatistics.Game.Teams.forEach((t) => {
+        const team = {
+          id: t.id,
+          displayName: t.displayName,
+          TeamStatistics: gameStatistics.TeamGameStatistics.find((tgs) => {
+            return tgs.teamId === t.id;
+          }),
+          imageUrl: t.imageUrl,
+        };
+        athletes.forEach((a) => {
           const athlete = {
             id: a.id,
             displayName: a.displayName,
@@ -112,6 +117,30 @@ export const commonRoutes = (app: Express, logger: Logger) => {
       });
 
       res.status(200).json(mappedGameStatistics);
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json(err);
+    }
+  });
+
+  app.post("/getRoster", async (req, res) => {
+    try {
+      const teamId = req.body.teamId;
+      const displayYear = req.body.displayYear;
+      const seasonType = req.body.seasonType;
+      const parentPositions = await listParentPositions();
+      const roster = await listTeamRoster(displayYear, seasonType, teamId);
+      const athletes = roster.Athletes.map((a) => {
+        return {
+          ...a,
+          positionDisplayName: a.Position.displayName,
+          parentPositionDisplayName: parentPositions.find(
+            (p) => p.espnId === a.Position.parentPositionId
+          )?.displayName,
+          Position: undefined,
+        };
+      });
+      res.status(200).json(athletes);
     } catch (err) {
       logger.error(err);
       res.status(500).json(err);

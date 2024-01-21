@@ -16,6 +16,7 @@ import {
 } from "./responseHandlerHelpers";
 import { updateGameStatisticsIsComplete } from "../../models/GameStatistics";
 import { upsertRosters } from "../../models/rosters";
+import { updateGameIsComplete } from "../../models/games";
 
 export const espnResponseHandler = {
   handleSportsTeamsResponse: (
@@ -46,12 +47,13 @@ export const espnResponseHandler = {
     const games: Prisma.GameCreateInput[] = [];
     const uniqueGames = mapIdenticalGames(scheduleResponse);
     uniqueGames.forEach((g) => {
-      const game = createGame(g.event, g.homeTeamId, g.leagueId, g.awayTeamId);
+      const game = createGame(g.event, g.leagueId, g.homeTeamId, g.awayTeamId);
       games.push(game);
     });
     // Connect Identical Games
-
-    return games;
+    return games.filter(
+      (g) => (g.Teams?.connect as Prisma.TeamWhereUniqueInput[])?.length > 0
+    );
   },
   handleTeamRosterResponse: async (
     rosterResponse: {
@@ -87,6 +89,10 @@ export const espnResponseHandler = {
         };
         const savedTeamRoster = await upsertRosters(teamRoster);
         sr.roster.athletes.forEach((a) => {
+          if (!a.items && a.guid) {
+            a["items"] = sr.roster
+              .athletes as EspnApiV2.ResponseTeamRoster.Item[];
+          }
           a.items?.forEach((i) => {
             const { teamAthlete, positions } = createTeamAthlete(
               i,
@@ -219,10 +225,25 @@ export const espnResponseHandler = {
           gameStatistic.id,
           athletes
         );
-
-        if (gsr.game.isComplete && !gsr.game.Statistics?.isComplete) {
-          await updateGameStatisticsIsComplete(gameStatistic.id);
+        if (gsr.game.isComplete) {
+          if (!gsr.game.Statistics?.isComplete) {
+            await updateGameStatisticsIsComplete(gameStatistic.id);
+          }
+        } else {
+          const previousDrives = gsr.gameSummary.drives?.previous;
+          const plays = gsr.gameSummary.plays;
+          if (
+            // No indicator found for mlb
+            previousDrives?.[previousDrives?.length - 1]?.result ===
+              "END OF GAME" ||
+            plays?.[plays?.length - 1]?.text === "End of Game" ||
+            plays?.[plays?.length - 1]?.text === "Game End"
+          ) {
+            await updateGameIsComplete(gsr.game.id);
+            await updateGameStatisticsIsComplete(gameStatistic.id);
+          }
         }
+
         return { teamGameStatistics, gameStatistic, athleteGameStatistics };
       })
     );
@@ -237,10 +258,12 @@ export const espnResponseHandler = {
       teams
     );
     uniqueGames.forEach((g) => {
-      const game = createGame(g.event, g.homeTeamId, g.leagueId, g.awayTeamId);
+      const game = createGame(g.event, g.leagueId, g.homeTeamId, g.awayTeamId);
       games.push(game);
     });
 
-    return games;
+    return games.filter(
+      (g) => (g.Teams?.connect as Prisma.TeamWhereUniqueInput[])?.length > 0
+    );
   },
 };

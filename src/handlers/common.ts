@@ -2,6 +2,7 @@ import { prisma } from "..";
 import { getFPSPlayersForDraft } from "../models/fantasaySportsData";
 import { listNflScrapedPlayersWithNoFPSData } from "../models/scrapedPlayers";
 import { mergeValues } from "../util/normalizePlayers";
+const twentyFourHoursFrom = +12 * 60 * 60 * 1000;
 
 export const resetData = async () => {
   await prisma.fantasyProsData.deleteMany({});
@@ -10,11 +11,10 @@ export const resetData = async () => {
   await prisma.scrapedTeam.deleteMany({});
 };
 
-export const todaysBirthday = async () => {
-  const now = Date.now();
-  const twentyFourHoursFrom = +12 * 60 * 60 * 1000;
+export const todaysBirthday = async (date?: string) => {
+  const now = date ? new Date(date).getTime() : Date.now();
 
-  const d = new Date();
+  const d = new Date(now);
   const players = await prisma.athlete.findMany({
     where: {
       birthday: { startsWith: `${d.getMonth() + 1}/${d.getDate()}/` },

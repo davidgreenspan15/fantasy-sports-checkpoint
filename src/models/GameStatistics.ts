@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "..";
+import { findTeamRoster } from "./rosters";
 
 export const upsertGameStatistics = async (
   gameId: string,
@@ -38,7 +39,11 @@ export const getGameStatistic = async (gameId: string) => {
           espnId: true,
           seasonId: true,
           Teams: {
-            select: { id: true },
+            select: {
+              id: true,
+              displayName: true,
+              imageUrl: true,
+            },
           },
         },
       },
@@ -118,48 +123,6 @@ export const getGameStatistic = async (gameId: string) => {
       },
     },
   });
-  const rosters = await prisma.roster.findMany({
-    where: {
-      Season: {
-        id: gameStatistics?.Game?.seasonId,
-      },
-      OR: [
-        {
-          Team: {
-            id: gameStatistics?.Game?.Teams[0].id,
-          },
-        },
 
-        {
-          Team: {
-            id: gameStatistics?.Game?.Teams[1].id,
-          },
-        },
-      ],
-    },
-    select: {
-      Team: {
-        select: {
-          id: true,
-          displayName: true,
-        },
-      },
-      Athletes: {
-        select: {
-          id: true,
-          displayName: true,
-          imageUrl: true,
-          number: true,
-          Position: {
-            select: {
-              displayName: true,
-              parentPositionId: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  return { gameStatistics, rosters };
+  return gameStatistics;
 };

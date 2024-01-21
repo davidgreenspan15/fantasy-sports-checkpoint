@@ -176,8 +176,8 @@ model Game {
   shortName  String         @map(name: "short_name")
   week       Int?
   isComplete Boolean        @default(false) @map(name: "is_complete")
-  homeTeamId String         @map(name: "home_team_id")
-  awayTeamId String         @map(name: "away_team_id")
+  homeTeamId String?        @map(name: "home_team_id")
+  awayTeamId String?        @map(name: "away_team_id")
   Statistics GameStatistic?
   Teams      Team[]
   Season     Season         @relation(fields: [seasonId], references: [id])

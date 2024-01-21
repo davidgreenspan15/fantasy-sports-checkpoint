@@ -80,3 +80,45 @@ export const listTeamAthletes = async (teamId?: string) => {
     select,
   });
 };
+
+export const getAthlete = async (id) => {
+  return await prisma.athlete.findUnique({
+    where: {
+      id: id,
+    },
+    select: {
+      id: true,
+      displayName: true,
+      imageUrl: true,
+      number: true,
+      teamId: true,
+      Position: {
+        select: {
+          displayName: true,
+          parentPositionId: true,
+        },
+      },
+    },
+  });
+};
+
+export const getAthletesById = async (ids: string[]) => {
+  return await prisma.athlete.findMany({
+    where: {
+      id: { in: ids },
+    },
+    select: {
+      id: true,
+      displayName: true,
+      imageUrl: true,
+      number: true,
+      teamId: true,
+      Position: {
+        select: {
+          displayName: true,
+          parentPositionId: true,
+        },
+      },
+    },
+  });
+};
