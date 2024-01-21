@@ -77,32 +77,35 @@ export const commonRoutes = (app: Express, logger: Logger) => {
         await migrateGameStatistics([gameId], undefined, undefined);
       }
       const parentPositions = await listParentPositions();
-      const gameStatistics = await getGameStatistic(gameId);
+      const { gameStatistics, game } = await getGameStatistic(gameId);
       const athletes = await getAthletesById(
-        gameStatistics.AthleteGameStatistics.map((ags) => ags.athleteId)
+        gameStatistics?.AthleteGameStatistics.map((ags) => ags.athleteId) ?? []
       );
 
-      const mappedGameStatistics = [];
-      gameStatistics.Game.Teams.forEach((t) => {
+      const mappedGameStatistics = {
+        timeOnClock: game.timeOnClock,
+        period: game.period,
+        teams: [],
+        isComplete: game.isComplete,
+      };
+      game.Teams.forEach((t) => {
         const team = {
-          id: t.id,
-          displayName: t.displayName,
-          TeamStatistics: gameStatistics.TeamGameStatistics.find((tgs) => {
+          ...t,
+          timeOnClock: game.timeOnClock,
+          period: game.period,
+          isHome: t.id === game.homeTeamId,
+          TeamStatistics: gameStatistics?.TeamGameStatistics.find((tgs) => {
             return tgs.teamId === t.id;
           }),
-          imageUrl: t.imageUrl,
         };
         athletes.forEach((a) => {
           const athlete = {
-            id: a.id,
-            displayName: a.displayName,
-            imageUrl: a.imageUrl,
-            number: a.number,
+            ...a,
             positionDisplayName: a.Position.displayName,
             parentPositionDisplayName: parentPositions.find(
               (p) => p.espnId === a.Position.parentPositionId
             )?.displayName,
-            AthleteStatistics: gameStatistics.AthleteGameStatistics.find(
+            AthleteStatistics: gameStatistics?.AthleteGameStatistics?.find(
               (ags) => {
                 return ags.athleteId === a.id;
               }
@@ -113,7 +116,7 @@ export const commonRoutes = (app: Express, logger: Logger) => {
           }
           team["Athletes"].push(athlete);
         });
-        mappedGameStatistics.push(team);
+        mappedGameStatistics.teams.push(team);
       });
 
       res.status(200).json(mappedGameStatistics);

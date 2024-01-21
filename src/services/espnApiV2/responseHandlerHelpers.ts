@@ -114,6 +114,8 @@ export const createTeam: (
     nickname: team.nickname,
     location: team.location,
     isActive: team.isActive,
+    color: team.color,
+    alternateColor: team.alternateColor,
     uid: team.uid,
     imageUrl: team.logos?.[0]?.href ?? "",
   };

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "..";
 import { findTeamRoster } from "./rosters";
+import { getGameById } from "./games";
 
 export const upsertGameStatistics = async (
   gameId: string,
@@ -27,27 +28,12 @@ export const updateGameStatisticsIsComplete = async (id: string) => {
 };
 
 export const getGameStatistic = async (gameId: string) => {
+  const game = await getGameById(gameId);
   const gameStatistics = await prisma.gameStatistic.findUnique({
     where: {
       gameId: gameId,
     },
     select: {
-      Game: {
-        select: {
-          id: true,
-          name: true,
-          espnId: true,
-          seasonId: true,
-          Teams: {
-            select: {
-              id: true,
-              displayName: true,
-              imageUrl: true,
-            },
-          },
-        },
-      },
-
       TeamGameStatistics: {
         select: {
           teamScore: true,
@@ -124,5 +110,5 @@ export const getGameStatistic = async (gameId: string) => {
     },
   });
 
-  return gameStatistics;
+  return { gameStatistics, game };
 };

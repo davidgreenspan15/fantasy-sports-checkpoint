@@ -184,3 +184,54 @@ export const updateGameIsComplete = async (id: string) => {
     },
   });
 };
+
+export const updateGameStatus = async (
+  id: string,
+  timeOnClock: string,
+  period: number,
+  isComplete: boolean
+) => {
+  return await prisma.game.update({
+    where: {
+      id: id,
+    },
+    data: {
+      timeOnClock,
+      period,
+      isComplete,
+    },
+  });
+};
+
+export const getGameById = async (gameId: string) => {
+  const gameStatistics = await prisma.game.findUnique({
+    where: {
+      id: gameId,
+    },
+    select: {
+      timeOnClock: true,
+      period: true,
+      isComplete: true,
+      id: true,
+      name: true,
+      espnId: true,
+      seasonId: true,
+      homeTeamId: true,
+      awayTeamId: true,
+      Teams: {
+        select: {
+          id: true,
+          name: true,
+          abbreviation: true,
+          displayName: true,
+          location: true,
+          imageUrl: true,
+          color: true,
+          alternateColor: true,
+        },
+      },
+    },
+  });
+
+  return gameStatistics;
+};

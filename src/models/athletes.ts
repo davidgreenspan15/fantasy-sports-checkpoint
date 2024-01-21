@@ -108,6 +108,9 @@ export const getAthletesById = async (ids: string[]) => {
       id: { in: ids },
     },
     select: {
+      uid: true,
+      firstName: true,
+      lastName: true,
       id: true,
       displayName: true,
       imageUrl: true,

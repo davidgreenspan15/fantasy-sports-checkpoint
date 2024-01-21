@@ -1163,6 +1163,7 @@ export namespace EspnApiV2 {
 
     export interface Drives {
       previous: Previous[];
+      current?: Previous[];
     }
 
     export interface Previous {

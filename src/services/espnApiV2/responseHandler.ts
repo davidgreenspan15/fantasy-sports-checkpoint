@@ -16,7 +16,7 @@ import {
 } from "./responseHandlerHelpers";
 import { updateGameStatisticsIsComplete } from "../../models/GameStatistics";
 import { upsertRosters } from "../../models/rosters";
-import { updateGameIsComplete } from "../../models/games";
+import { updateGameIsComplete, updateGameStatus } from "../../models/games";
 
 export const espnResponseHandler = {
   handleSportsTeamsResponse: (
@@ -210,41 +210,51 @@ export const espnResponseHandler = {
   ) => {
     return Promise.all(
       gameSummaryResponse.map(async (gsr) => {
-        const gameStatistic = await createGameStatistic(gsr);
-        const scoringPlays =
-          gsr.gameSummary?.scoringPlays ?? gsr.gameSummary?.plays ?? [];
-        const teamGameStatistics = await createTeamGameStatistics(
-          gsr.gameSummary.boxscore,
-          gsr.game,
-          gameStatistic.id,
-          scoringPlays[scoringPlays.length - 1]
-        );
-        const athleteGameStatistics = await createAthleteGameStatistics(
-          gsr.gameSummary.boxscore,
-          gsr.game,
-          gameStatistic.id,
-          athletes
-        );
-        if (gsr.game.isComplete) {
-          if (!gsr.game.Statistics?.isComplete) {
-            await updateGameStatisticsIsComplete(gameStatistic.id);
-          }
-        } else {
-          const previousDrives = gsr.gameSummary.drives?.previous;
-          const plays = gsr.gameSummary.plays;
-          if (
-            // No indicator found for mlb
-            previousDrives?.[previousDrives?.length - 1]?.result ===
-              "END OF GAME" ||
-            plays?.[plays?.length - 1]?.text === "End of Game" ||
-            plays?.[plays?.length - 1]?.text === "Game End"
-          ) {
-            await updateGameIsComplete(gsr.game.id);
-            await updateGameStatisticsIsComplete(gameStatistic.id);
-          }
-        }
+        const drives = gsr.gameSummary.drives;
+        const plays =
+          (drives?.previous || drives?.current)?.flatMap((d) => {
+            return d.plays;
+          }) || gsr.gameSummary.plays;
 
-        return { teamGameStatistics, gameStatistic, athleteGameStatistics };
+        if (plays?.length > 0) {
+          const lastPlay = plays[plays.length - 1];
+          const isComplete =
+            lastPlay?.text === "End of Game" ||
+            lastPlay?.text === "Game End" ||
+            lastPlay?.text === "END GAME";
+          const updatedGame = await updateGameStatus(
+            gsr.game.id,
+            lastPlay?.clock.displayValue,
+            lastPlay?.period.number,
+            isComplete
+          );
+          gsr.game = {
+            ...gsr.game,
+            ...updatedGame,
+          };
+
+          const gameStatistic = await createGameStatistic(gsr);
+
+          const teamGameStatistics = await createTeamGameStatistics(
+            gsr.gameSummary.boxscore,
+            gsr.game,
+            gameStatistic.id,
+            plays[plays.length - 1]
+          );
+          const athleteGameStatistics = await createAthleteGameStatistics(
+            gsr.gameSummary.boxscore,
+            gsr.game,
+            gameStatistic.id,
+            athletes
+          );
+          if (gsr.game.isComplete) {
+            if (!gsr.game.Statistics?.isComplete) {
+              await updateGameStatisticsIsComplete(gameStatistic.id);
+            }
+          }
+
+          return { teamGameStatistics, gameStatistic, athleteGameStatistics };
+        }
       })
     );
   },

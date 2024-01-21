@@ -59,6 +59,8 @@ model Team {
   shortDisplayName  String              @map(name: "short_display_name")
   imageUrl          String?             @map(name: "image_url")
   isActive          Boolean             @map(name: "is_active")
+  color             String?
+  alternateColor    String?             @map(name: "alternate_color")
   Games             Game[]
   Athletes          Athlete[]
   TeamGameStatistic TeamGameStatistic[]
@@ -169,21 +171,23 @@ model Position {
 }
 
 model Game {
-  id         String         @id @default(uuid())
-  espnId     String         @map(name: "espn_id")
-  date       DateTime
-  name       String
-  shortName  String         @map(name: "short_name")
-  week       Int?
-  isComplete Boolean        @default(false) @map(name: "is_complete")
-  homeTeamId String?        @map(name: "home_team_id")
-  awayTeamId String?        @map(name: "away_team_id")
-  Statistics GameStatistic?
-  Teams      Team[]
-  Season     Season         @relation(fields: [seasonId], references: [id])
-  seasonId   String         @map(name: "season_id")
-  League     League         @relation(fields: [leagueId], references: [id])
-  leagueId   String         @map(name: "league_id")
+  id          String         @id @default(uuid())
+  espnId      String         @map(name: "espn_id")
+  date        DateTime
+  name        String
+  shortName   String         @map(name: "short_name")
+  week        Int?
+  isComplete  Boolean        @default(false) @map(name: "is_complete")
+  timeOnClock String?        @map(name: "time_on_clock")
+  period      Int?           @map(name: "period")
+  homeTeamId  String?        @map(name: "home_team_id")
+  awayTeamId  String?        @map(name: "away_team_id")
+  Statistics  GameStatistic?
+  Teams       Team[]
+  Season      Season         @relation(fields: [seasonId], references: [id])
+  seasonId    String         @map(name: "season_id")
+  League      League         @relation(fields: [leagueId], references: [id])
+  leagueId    String         @map(name: "league_id")
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
@@ -201,6 +205,7 @@ model GameStatistic {
   isComplete            Boolean                @default(false) @map(name: "is_complete")
   createdAt             DateTime               @default(now()) @map(name: "created_at")
   updatedAt             DateTime?              @map(name: "updated_at")
+  jsonPayload           Json?                  @map(name: "json_payload")
 
   @@map(name: "game_statistics")
 }
