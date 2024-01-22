@@ -13,6 +13,7 @@ import {
   createTeamGameStatistics,
   mapIdenticalGames,
   mapIdenticalYearlyGames,
+  subtractFromTwentyMinutes,
 } from "./responseHandlerHelpers";
 import { updateGameStatisticsIsComplete } from "../../models/GameStatistics";
 import { upsertRosters } from "../../models/rosters";
@@ -222,9 +223,13 @@ export const espnResponseHandler = {
             lastPlay?.text === "End of Game" ||
             lastPlay?.text === "Game End" ||
             lastPlay?.text === "END GAME";
+          let timeOnClock = lastPlay?.clock.displayValue;
+          if (gsr.game.League.slug === "nhl") {
+            timeOnClock = subtractFromTwentyMinutes(timeOnClock);
+          }
           const updatedGame = await updateGameStatus(
             gsr.game.id,
-            lastPlay?.clock.displayValue,
+            timeOnClock,
             lastPlay?.period.number,
             isComplete
           );

@@ -1,4 +1,10 @@
+import { JsonObject, JsonValue } from "@prisma/client/runtime/library";
 import { prisma } from "..";
+import { listAthletes } from "../models/athletes";
+import { listAllGamesWithGameStatistics } from "../models/games";
+import { espnResponseHandler } from "../services/espnApiV2/responseHandler";
+import { EspnApiV2 } from "../types/EspnApiV2/espnApiV2";
+import { ListAllNflGamesResponse } from "../types/games";
 
 export const reconnectAthletesGamesTeamsToLeagues = async () => {
   const leagues = await prisma.league.findMany({
@@ -181,4 +187,38 @@ export const updateNflGameSeason = async () => {
       seasonId: newSeason.id,
     },
   });
+};
+
+export const migrateGameStatisticsWithJson = async () => {
+  // Getting Games
+  const games: ListAllNflGamesResponse[] =
+    await listAllGamesWithGameStatistics();
+  // Getting Athletes
+  const athletes = await listAthletes();
+  // Get Game Summary
+  const gameSummaryResponse: {
+    gameSummary: EspnApiV2.GameSummaryResponse;
+    game: ListAllNflGamesResponse;
+  }[] = games.map((g) => {
+    return {
+      // @ts-ignore
+      gameSummary: g.Statistics
+        .jsonPayload as JsonObject as EspnApiV2.GameSummaryResponse,
+      game: g,
+    };
+  });
+
+  // Handle Game Summary Statistics will be saved in this step
+  const gameStatistics = await espnResponseHandler.handleGameSummaryResponse(
+    gameSummaryResponse,
+    athletes
+  );
+
+  return gameStatistics;
+};
+
+const isGameSummaryResponse = (
+  jsonValue: JsonValue | EspnApiV2.GameSummaryResponse
+): jsonValue is EspnApiV2.GameSummaryResponse => {
+  return (jsonValue as JsonObject).gameInfo !== undefined;
 };

@@ -6,7 +6,7 @@ import { prisma } from "..";
 import { getAthletesById, listTeamAthletes } from "../models/athletes";
 import { listParentPositions } from "../models/positions";
 import { listLeaguesWithTeams } from "../models/leagues";
-import { listTeamGames } from "../models/games";
+import { getGameById, listTeamGames } from "../models/games";
 import { getGameStatistic } from "../models/GameStatistics";
 import { migrateGameStatistics } from "../handlers/espnApiV2";
 import { listTeamRoster } from "../models/rosters";
@@ -61,6 +61,17 @@ export const commonRoutes = (app: Express, logger: Logger) => {
       const displayYear = req.body.displayYear;
       const seasonType = req.body.seasonType;
       const games = await listTeamGames(displayYear, seasonType, teamId);
+      res.status(200).json(games);
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json(err);
+    }
+  });
+
+  app.post("/getGame", async (req, res) => {
+    try {
+      const gameId = req.body.gameId;
+      const games = await getGameById(gameId);
       res.status(200).json(games);
     } catch (err) {
       logger.error(err);
@@ -133,7 +144,7 @@ export const commonRoutes = (app: Express, logger: Logger) => {
       const seasonType = req.body.seasonType;
       const parentPositions = await listParentPositions();
       const roster = await listTeamRoster(displayYear, seasonType, teamId);
-      const athletes = roster.Athletes.map((a) => {
+      const athletes = roster?.Athletes.map((a) => {
         return {
           ...a,
           positionDisplayName: a.Position.displayName,
@@ -154,6 +165,52 @@ export const commonRoutes = (app: Express, logger: Logger) => {
     try {
       const playersWithBirthdayAndGame = await todaysBirthday();
       res.status(200).json(playersWithBirthdayAndGame);
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json({ err });
+    }
+  });
+
+  app.get("/birthdayStats", async (req, res) => {
+    try {
+      const games = await prisma.game.findMany({
+        where: { League: { abbreviation: "NFL" } },
+      });
+      const playersWithBrithdays = await Promise.all(
+        games.map(async (game) => {
+          return await todaysBirthday(game.date);
+        })
+      );
+      const playersWithBirthdays = playersWithBrithdays.flatMap(
+        (p) => p.playerWithBirthdays
+      );
+
+      const successFullPlayers = playersWithBirthdays.filter((p) => {
+        return (
+          p.AthleteGameStatistic?.[0]?.NflStatistic?.PassingStatistics
+            .touchdowns > 0 ||
+          p.AthleteGameStatistic?.[0]?.NflStatistic?.RushingStatistics
+            .touchdowns > 0 ||
+          p.AthleteGameStatistic?.[0]?.NflStatistic?.ReceivingStatistics
+            .touchdowns > 0
+        );
+      });
+      const unsuccessfulPlayers = playersWithBirthdays.filter((p) => {
+        return (
+          p.AthleteGameStatistic?.[0]?.NflStatistic?.PassingStatistics
+            .touchdowns === 0 &&
+          p.AthleteGameStatistic?.[0]?.NflStatistic?.RushingStatistics
+            .touchdowns === 0 &&
+          p.AthleteGameStatistic?.[0]?.NflStatistic?.ReceivingStatistics
+            .touchdowns === 0
+        );
+      });
+      res.status(200).json({
+        successFullPlayersCount: successFullPlayers.length,
+        unsuccessfulPlayersCount: unsuccessfulPlayers.length,
+        successFullPlayers,
+        unsuccessfulPlayers,
+      });
     } catch (err) {
       logger.error(err);
       res.status(500).json({ err });

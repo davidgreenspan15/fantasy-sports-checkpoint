@@ -450,6 +450,8 @@ export const createGameStatistic: (gameSummaryResponse: {
   const game = gameSummaryResponse.game;
   const gameStatistics: Prisma.GameStatisticCreateInput = {
     Game: { connect: { id: game.id } },
+    //@ts-ignore
+    jsonPayload: gameSummaryResponse.gameSummary as Prisma.InputJsonObject,
   };
 
   const savedGameStatistic = await upsertGameStatistics(
@@ -1606,4 +1608,36 @@ const stringToNumberOrZero: (string: string) => number | null = (string) => {
     return value;
   }
   return 0;
+};
+
+export const subtractFromTwentyMinutes = (time?: string): string => {
+  if (!time) {
+    return "20:00";
+  }
+  // Total time in seconds (20 minutes)
+  const totalTimeInSeconds = 20 * 60;
+
+  // Split the input time into minutes and seconds
+  const [minutes, seconds] = time.split(":").map(Number);
+
+  // Convert input time to seconds
+  const inputTimeInSeconds = minutes * 60 + seconds;
+
+  // Calculate remaining time
+  const remainingTimeInSeconds = totalTimeInSeconds - inputTimeInSeconds;
+
+  // Check if input time is more than 20 minutes
+  if (remainingTimeInSeconds < 0) {
+    throw new Error("Input time exceeds 20 minutes");
+  }
+
+  // Convert remaining time back to MM:SS format
+  const remainingMinutes = Math.floor(remainingTimeInSeconds / 60);
+  const remainingSeconds = remainingTimeInSeconds % 60;
+
+  // Format the remaining time with leading zeros if necessary
+  const formattedRemainingTime = `${remainingMinutes
+    .toString()
+    .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+  return formattedRemainingTime;
 };

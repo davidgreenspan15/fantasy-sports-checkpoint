@@ -11,14 +11,20 @@ export const resetData = async () => {
   await prisma.scrapedTeam.deleteMany({});
 };
 
-export const todaysBirthday = async (date?: string) => {
+export const todaysBirthday = async (date?: Date) => {
   const now = date ? new Date(date).getTime() : Date.now();
 
   const d = new Date(now);
+  const where = {
+    birthday: { startsWith: `${d.getMonth() + 1}/${d.getDate()}/` },
+  };
+  if (date) {
+    where["Position"] = {
+      parentPositionId: "70",
+    };
+  }
   const players = await prisma.athlete.findMany({
-    where: {
-      birthday: { startsWith: `${d.getMonth() + 1}/${d.getDate()}/` },
-    },
+    where,
     select: {
       fullName: true,
       dateOfBirth: true,
@@ -55,6 +61,17 @@ export const todaysBirthday = async (date?: string) => {
               date: true,
               name: true,
               week: true,
+            },
+          },
+        },
+      },
+      AthleteGameStatistic: {
+        select: {
+          NflStatistic: {
+            select: {
+              PassingStatistics: true,
+              RushingStatistics: true,
+              ReceivingStatistics: true,
             },
           },
         },

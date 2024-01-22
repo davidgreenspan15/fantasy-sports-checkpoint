@@ -13,6 +13,7 @@ import {
 import { getGameStatistic } from "../models/GameStatistics";
 import {
   connectSeasonsToGames,
+  migrateGameStatisticsWithJson,
   updateNflGameSeason,
 } from "../util/migrationFixes";
 
@@ -140,6 +141,16 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
   app.get("/migrateMissingNflGames", async (req, res) => {
     try {
       const resp = await migrateMissingNflGames();
+      res.status(200).json({ resp });
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json(err);
+    }
+  });
+
+  app.get("/migrateStatsFromSavedPayload", async (req, res) => {
+    try {
+      const resp = await migrateGameStatisticsWithJson();
       res.status(200).json({ resp });
     } catch (err) {
       logger.error(err);
