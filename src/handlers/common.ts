@@ -20,7 +20,7 @@ export const todaysBirthday = async (date?: Date) => {
   };
   if (date) {
     where["Position"] = {
-      parentPositionId: "70",
+      OR: [{ espnId: "1" }, { espnId: "9" }, { espnId: "7" }],
     };
   }
   const players = await prisma.athlete.findMany({
@@ -66,12 +66,50 @@ export const todaysBirthday = async (date?: Date) => {
         },
       },
       AthleteGameStatistic: {
+        where: {
+          GameStatistic: {
+            Game: {
+              AND: [
+                {
+                  date: {
+                    gte: new Date(now - twentyFourHoursFrom),
+                  },
+                },
+                {
+                  date: {
+                    lt: new Date(now + twentyFourHoursFrom), // 24 hours later for less than comparison
+                  },
+                },
+              ],
+            },
+          },
+        },
         select: {
           NflStatistic: {
+            where: {
+              AthleteGameStatistic: {
+                GameStatistic: {
+                  Game: {
+                    AND: [
+                      {
+                        date: {
+                          gte: new Date(now - twentyFourHoursFrom),
+                        },
+                      },
+                      {
+                        date: {
+                          lt: new Date(now + twentyFourHoursFrom), // 24 hours later for less than comparison
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
             select: {
-              PassingStatistics: true,
-              RushingStatistics: true,
-              ReceivingStatistics: true,
+              PassingStatistic: true,
+              RushingStatistic: true,
+              ReceivingStatistic: true,
             },
           },
         },
@@ -90,6 +128,7 @@ export const todaysBirthday = async (date?: Date) => {
 
   return { playerWithBirthdays };
 };
+
 export const getDraftBoard = async () => {
   const fpsPlayers = await getFPSPlayersForDraft();
   const playersWithNoFps = await listNflScrapedPlayersWithNoFPSData();

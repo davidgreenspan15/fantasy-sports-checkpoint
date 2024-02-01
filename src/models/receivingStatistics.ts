@@ -4,9 +4,9 @@ import { prisma } from "..";
 export const upsertTeamReceivingStatistics = async (
   teamId: string,
   gameId: string,
-  statistics: Prisma.ReceivingStatisticsCreateInput
+  statistics: Prisma.ReceivingStatisticCreateInput
 ) => {
-  return await prisma.receivingStatistics.upsert({
+  return await prisma.receivingStatistic.upsert({
     where: {
       gameId_teamId: { teamId, gameId },
     },
@@ -18,9 +18,9 @@ export const upsertTeamReceivingStatistics = async (
 export const upsertAthleteReceivingStatistics = async (
   athleteId: string,
   gameId: string,
-  statistics: Prisma.ReceivingStatisticsCreateInput
+  statistics: Prisma.ReceivingStatisticCreateInput
 ) => {
-  return await prisma.receivingStatistics.upsert({
+  return await prisma.receivingStatistic.upsert({
     where: {
       gameId_athleteId: { athleteId, gameId },
     },

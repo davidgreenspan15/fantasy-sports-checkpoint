@@ -2,22 +2,22 @@ import {
   Athlete,
   AthleteGameStatistic,
   BasketballStatistic,
-  DefensiveStatistics,
-  FumbleStatistics,
+  DefensiveStatistic,
+  FumbleStatistic,
   GameStatistic,
-  InterceptionStatistics,
-  KickingStatistics,
-  KickReturnStatistics,
+  InterceptionStatistic,
+  KickingStatistic,
+  KickReturnStatistic,
   NbaAthleteStatistic,
   NbaTeamStatistic,
   NflAthleteStatistic,
   NflTeamStatistic,
-  PassingStatistics,
+  PassingStatistic,
   Prisma,
-  PuntingStatistics,
-  PuntReturnStatistics,
-  ReceivingStatistics,
-  RushingStatistics,
+  PuntingStatistic,
+  PuntReturnStatistic,
+  ReceivingStatistic,
+  RushingStatistic,
   TeamGameStatistic,
   NhlTeamStatistic,
   NhlAthleteStatistic,
@@ -834,20 +834,58 @@ const createNflAthleteStatistics: (
   );
 
   const athleteStatistics: Prisma.NflAthleteStatisticCreateInput = {
-    PassingStatistics: { connect: { id: passingStatistics?.id ?? "" } },
-    RushingStatistics: { connect: { id: rushingStatistics?.id ?? "" } },
-    ReceivingStatistics: { connect: { id: receivingStatistics?.id ?? "" } },
-    FumbleStatistics: { connect: { id: fumbleStatistics?.id ?? "" } },
-    KickingStatistics: { connect: { id: kickingStatistics?.id ?? "" } },
-    PuntingStatistics: { connect: { id: puntingStatistics?.id ?? "" } },
-    KickReturnStatistics: { connect: { id: kickReturnStatistics?.id ?? "" } },
-    PuntReturnStatistics: { connect: { id: puntReturnStatistics?.id ?? "" } },
-    DefensiveStatistics: { connect: { id: defensiveStatistics?.id ?? "" } },
-    InterceptionStatistics: {
-      connect: { id: interceptionStatistics?.id ?? "" },
-    },
     gameId: gameId,
   };
+  if (passingStatistics) {
+    athleteStatistics["PassingStatistics"] = {
+      connect: { id: passingStatistics.id },
+    };
+  }
+  if (rushingStatistics) {
+    athleteStatistics["RushingStatistics"] = {
+      connect: { id: rushingStatistics.id },
+    };
+  }
+  if (receivingStatistics) {
+    athleteStatistics["ReceivingStatistics"] = {
+      connect: { id: receivingStatistics.id },
+    };
+  }
+  if (fumbleStatistics) {
+    athleteStatistics["FumbleStatistics"] = {
+      connect: { id: fumbleStatistics.id },
+    };
+  }
+  if (kickingStatistics) {
+    athleteStatistics["KickingStatistics"] = {
+      connect: { id: kickingStatistics.id },
+    };
+  }
+  if (puntingStatistics) {
+    athleteStatistics["PuntingStatistics"] = {
+      connect: { id: puntingStatistics.id },
+    };
+  }
+  if (kickReturnStatistics) {
+    athleteStatistics["KickReturnStatistics"] = {
+      connect: { id: kickReturnStatistics.id },
+    };
+  }
+  if (puntReturnStatistics) {
+    athleteStatistics["PuntReturnStatistics"] = {
+      connect: { id: puntReturnStatistics.id },
+    };
+  }
+  if (defensiveStatistics) {
+    athleteStatistics["DefensiveStatistics"] = {
+      connect: { id: defensiveStatistics.id },
+    };
+  }
+  if (interceptionStatistics) {
+    athleteStatistics["InterceptionStatistics"] = {
+      connect: { id: interceptionStatistics.id },
+    };
+  }
 
   if (teamId) {
     athleteStatistics["teamId"] = teamId;
@@ -1090,9 +1128,13 @@ const createNbaAthleteStatistics: (
   );
 
   const athleteStatistics: Prisma.NbaAthleteStatisticCreateInput = {
-    BasketballStatistic: { connect: { id: basketballStatistic?.id ?? "" } },
     gameId: gameId,
   };
+  if (basketballStatistic) {
+    athleteStatistics["BasketballStatistic"] = {
+      connect: { id: basketballStatistic.id },
+    };
+  }
 
   if (teamId) {
     athleteStatistics["teamId"] = teamId;
@@ -1142,10 +1184,18 @@ const createNhlAthleteStatistics: (
     athleteId
   );
   const athleteStatistics: Prisma.NhlAthleteStatisticCreateInput = {
-    SkaterStatistic: { connect: { id: skaterStatistic?.id ?? "" } },
-    GoalieStatistic: { connect: { id: goalieStatistic?.id ?? "" } },
     gameId: gameId,
   };
+  if (skaterStatistic) {
+    athleteStatistics["SkaterStatistic"] = {
+      connect: { id: skaterStatistic.id },
+    };
+  }
+  if (goalieStatistic) {
+    athleteStatistics["GoalieStatistic"] = {
+      connect: { id: goalieStatistic.id },
+    };
+  }
 
   if (teamId) {
     athleteStatistics["teamId"] = teamId;
@@ -1174,25 +1224,27 @@ const createPassingStatistics: (
   gameId: string,
   teamId?: string,
   athleteId?: string
-) => Promise<PassingStatistics> = async (
+) => Promise<PassingStatistic> = async (
   playerStatistic,
   gameId,
   teamId,
   athleteId
 ) => {
-  const statistic: Prisma.PassingStatisticsCreateInput = {
-    completions: stringToNumberOrZero(playerStatistic?.[0]?.split("/")?.[0]),
-    attempts: stringToNumberOrZero(playerStatistic?.[0]?.split("/")?.[1]),
-    yards: stringToNumberOrZero(playerStatistic?.[1]),
-    yardsPerAttempt: stringToNumberOrZero(playerStatistic?.[2]),
-    touchdowns: stringToNumberOrZero(playerStatistic?.[3]),
-    interceptions: stringToNumberOrZero(playerStatistic?.[4]),
-    sacks: stringToNumberOrZero(playerStatistic?.[5]?.split("-")?.[0]),
-    sackYardsLost: stringToNumberOrZero(playerStatistic?.[5]?.split("-")?.[1]),
-    adjustedRating: stringToNumberOrZero(playerStatistic?.[6]),
-    rating: stringToNumberOrZero(playerStatistic?.[7]),
+  if (!playerStatistic) return null;
+  const statistic: Prisma.PassingStatisticCreateInput = {
+    completions: stringToNumberOrZero(playerStatistic[0]?.split("/")?.[0]),
+    attempts: stringToNumberOrZero(playerStatistic[0]?.split("/")?.[1]),
+    yards: stringToNumberOrZero(playerStatistic[1]),
+    yardsPerAttempt: stringToNumberOrZero(playerStatistic[2]),
+    touchdowns: stringToNumberOrZero(playerStatistic[3]),
+    interceptions: stringToNumberOrZero(playerStatistic[4]),
+    sacks: stringToNumberOrZero(playerStatistic[5]?.split("-")?.[0]),
+    sackYardsLost: stringToNumberOrZero(playerStatistic[5]?.split("-")?.[1]),
+    adjustedRating: stringToNumberOrZero(playerStatistic[6]),
+    rating: stringToNumberOrZero(playerStatistic[7]),
     gameId: gameId,
   };
+
   if (teamId) {
     statistic["teamId"] = teamId;
     return await upsertTeamPassingStatistics(teamId, gameId, statistic);
@@ -1207,18 +1259,19 @@ const createRushingStatistics: (
   gameId: string,
   teamId?: string,
   athleteId?: string
-) => Promise<RushingStatistics> = async (
+) => Promise<RushingStatistic> = async (
   playerStatistic,
   gameId,
   teamId,
   athleteId
 ) => {
-  const statistic: Prisma.RushingStatisticsCreateInput = {
-    attempts: stringToNumberOrZero(playerStatistic?.[0]),
-    yards: stringToNumberOrZero(playerStatistic?.[1]),
-    yardsPerAttempt: stringToNumberOrZero(playerStatistic?.[2]),
-    touchdowns: stringToNumberOrZero(playerStatistic?.[3]),
-    longest: stringToNumberOrZero(playerStatistic?.[4]),
+  if (!playerStatistic) return null;
+  const statistic: Prisma.RushingStatisticCreateInput = {
+    attempts: stringToNumberOrZero(playerStatistic[0]),
+    yards: stringToNumberOrZero(playerStatistic[1]),
+    yardsPerAttempt: stringToNumberOrZero(playerStatistic[2]),
+    touchdowns: stringToNumberOrZero(playerStatistic[3]),
+    longest: stringToNumberOrZero(playerStatistic[4]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1235,19 +1288,20 @@ const createReceivingStatistics: (
   gameId: string,
   teamId?: string,
   athleteId?: string
-) => Promise<ReceivingStatistics> = async (
+) => Promise<ReceivingStatistic> = async (
   playerStatistic,
   gameId,
   teamId,
   athleteId
 ) => {
-  const statistic: Prisma.ReceivingStatisticsCreateInput = {
-    receptions: stringToNumberOrZero(playerStatistic?.[0]),
-    yards: stringToNumberOrZero(playerStatistic?.[1]),
-    yardsPerReception: stringToNumberOrZero(playerStatistic?.[2]),
-    touchdowns: stringToNumberOrZero(playerStatistic?.[3]),
-    longest: stringToNumberOrZero(playerStatistic?.[4]),
-    targets: stringToNumberOrZero(playerStatistic?.[5]),
+  if (!playerStatistic) return null;
+  const statistic: Prisma.ReceivingStatisticCreateInput = {
+    receptions: stringToNumberOrZero(playerStatistic[0]),
+    yards: stringToNumberOrZero(playerStatistic[1]),
+    yardsPerReception: stringToNumberOrZero(playerStatistic[2]),
+    touchdowns: stringToNumberOrZero(playerStatistic[3]),
+    longest: stringToNumberOrZero(playerStatistic[4]),
+    targets: stringToNumberOrZero(playerStatistic[5]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1264,16 +1318,17 @@ const createFumbleStatistics: (
   gameId: string,
   teamId?: string,
   athleteId?: string
-) => Promise<FumbleStatistics> = async (
+) => Promise<FumbleStatistic> = async (
   playerStatistic,
   gameId,
   teamId,
   athleteId
 ) => {
-  const statistic: Prisma.FumbleStatisticsCreateInput = {
-    fumbles: stringToNumberOrZero(playerStatistic?.[0]),
-    lost: stringToNumberOrZero(playerStatistic?.[1]),
-    recovered: stringToNumberOrZero(playerStatistic?.[2]),
+  if (!playerStatistic) return null;
+  const statistic: Prisma.FumbleStatisticCreateInput = {
+    fumbles: stringToNumberOrZero(playerStatistic[0]),
+    lost: stringToNumberOrZero(playerStatistic[1]),
+    recovered: stringToNumberOrZero(playerStatistic[2]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1290,20 +1345,21 @@ const createDefensiveStatistics: (
   gameId: string,
   teamId?: string,
   athleteId?: string
-) => Promise<DefensiveStatistics> = async (
+) => Promise<DefensiveStatistic> = async (
   playerStatistic,
   gameId,
   teamId,
   athleteId
 ) => {
-  const statistic: Prisma.DefensiveStatisticsCreateInput = {
-    totalTackles: stringToNumberOrZero(playerStatistic?.[0]),
-    soloTackles: stringToNumberOrZero(playerStatistic?.[1]),
-    sacks: stringToNumberOrZero(playerStatistic?.[2]),
-    tacklesForLoss: stringToNumberOrZero(playerStatistic?.[3]),
-    passesDefended: stringToNumberOrZero(playerStatistic?.[4]),
-    qbHits: stringToNumberOrZero(playerStatistic?.[5]),
-    touchdowns: stringToNumberOrZero(playerStatistic?.[6]),
+  if (!playerStatistic) return null;
+  const statistic: Prisma.DefensiveStatisticCreateInput = {
+    totalTackles: stringToNumberOrZero(playerStatistic[0]),
+    soloTackles: stringToNumberOrZero(playerStatistic[1]),
+    sacks: stringToNumberOrZero(playerStatistic[2]),
+    tacklesForLoss: stringToNumberOrZero(playerStatistic[3]),
+    passesDefended: stringToNumberOrZero(playerStatistic[4]),
+    qbHits: stringToNumberOrZero(playerStatistic[5]),
+    touchdowns: stringToNumberOrZero(playerStatistic[6]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1320,16 +1376,17 @@ const createInterceptionStatistics: (
   gameId: string,
   teamId?: string,
   athleteId?: string
-) => Promise<InterceptionStatistics> = async (
+) => Promise<InterceptionStatistic> = async (
   playerStatistic,
   gameId,
   teamId,
   athleteId
 ) => {
-  const statistic: Prisma.InterceptionStatisticsCreateInput = {
-    interceptions: stringToNumberOrZero(playerStatistic?.[0]),
-    yards: stringToNumberOrZero(playerStatistic?.[1]),
-    touchdowns: stringToNumberOrZero(playerStatistic?.[2]),
+  if (!playerStatistic) return null;
+  const statistic: Prisma.InterceptionStatisticCreateInput = {
+    interceptions: stringToNumberOrZero(playerStatistic[0]),
+    yards: stringToNumberOrZero(playerStatistic[1]),
+    touchdowns: stringToNumberOrZero(playerStatistic[2]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1350,18 +1407,19 @@ const createKickReturnStatistics: (
   gameId: string,
   teamId?: string,
   athleteId?: string
-) => Promise<KickReturnStatistics> = async (
+) => Promise<KickReturnStatistic> = async (
   playerStatistic,
   gameId,
   teamId,
   athleteId
 ) => {
-  const statistic: Prisma.KickReturnStatisticsCreateInput = {
-    returns: stringToNumberOrZero(playerStatistic?.[0]),
-    yards: stringToNumberOrZero(playerStatistic?.[1]),
-    yardsPerReturn: stringToNumberOrZero(playerStatistic?.[2]),
-    longest: stringToNumberOrZero(playerStatistic?.[3]),
-    touchdowns: stringToNumberOrZero(playerStatistic?.[4]),
+  if (!playerStatistic) return null;
+  const statistic: Prisma.KickReturnStatisticCreateInput = {
+    returns: stringToNumberOrZero(playerStatistic[0]),
+    yards: stringToNumberOrZero(playerStatistic[1]),
+    yardsPerReturn: stringToNumberOrZero(playerStatistic[2]),
+    longest: stringToNumberOrZero(playerStatistic[3]),
+    touchdowns: stringToNumberOrZero(playerStatistic[4]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1382,18 +1440,19 @@ const createPuntReturnStatistics: (
   gameId: string,
   teamId?: string,
   athleteId?: string
-) => Promise<PuntReturnStatistics> = async (
+) => Promise<PuntReturnStatistic> = async (
   playerStatistic,
   gameId,
   teamId,
   athleteId
 ) => {
-  const statistic: Prisma.PuntReturnStatisticsCreateInput = {
-    returns: stringToNumberOrZero(playerStatistic?.[0]),
-    yards: stringToNumberOrZero(playerStatistic?.[1]),
-    yardsPerReturn: stringToNumberOrZero(playerStatistic?.[2]),
-    longest: stringToNumberOrZero(playerStatistic?.[3]),
-    touchdowns: stringToNumberOrZero(playerStatistic?.[4]),
+  if (!playerStatistic) return null;
+  const statistic: Prisma.PuntReturnStatisticCreateInput = {
+    returns: stringToNumberOrZero(playerStatistic[0]),
+    yards: stringToNumberOrZero(playerStatistic[1]),
+    yardsPerReturn: stringToNumberOrZero(playerStatistic[2]),
+    longest: stringToNumberOrZero(playerStatistic[3]),
+    touchdowns: stringToNumberOrZero(playerStatistic[4]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1414,24 +1473,25 @@ const createKickingStatistics: (
   gameId: string,
   teamId?: string,
   athleteId?: string
-) => Promise<KickingStatistics> = async (
+) => Promise<KickingStatistic> = async (
   playerStatistic,
   gameId,
   teamId,
   athleteId
 ) => {
-  const statistic: Prisma.KickingStatisticsCreateInput = {
+  if (!playerStatistic) return null;
+  const statistic: Prisma.KickingStatisticCreateInput = {
     fieldGoalAttempts: stringToNumberOrZero(
-      playerStatistic?.[0]?.split("/")?.[0]
+      playerStatistic[0]?.split("/")?.[0]
     ),
-    fieldGoalMade: stringToNumberOrZero(playerStatistic?.[0]?.split("/")?.[1]),
-    fieldGoalPct: stringToNumberOrZero(playerStatistic?.[1]),
-    longest: stringToNumberOrZero(playerStatistic?.[2]),
+    fieldGoalMade: stringToNumberOrZero(playerStatistic[0]?.split("/")?.[1]),
+    fieldGoalPct: stringToNumberOrZero(playerStatistic[1]),
+    longest: stringToNumberOrZero(playerStatistic[2]),
     extraPointAttempts: stringToNumberOrZero(
-      playerStatistic?.[3]?.split("/")?.[0]
+      playerStatistic[3]?.split("/")?.[0]
     ),
-    extraPointMade: stringToNumberOrZero(playerStatistic?.[3]?.split("/")?.[1]),
-    totalPoints: stringToNumberOrZero(playerStatistic?.[4]),
+    extraPointMade: stringToNumberOrZero(playerStatistic[3]?.split("/")?.[1]),
+    totalPoints: stringToNumberOrZero(playerStatistic[4]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1448,19 +1508,20 @@ const createPuntingStatistics: (
   gameId: string,
   teamId?: string,
   athleteId?: string
-) => Promise<PuntingStatistics> = async (
+) => Promise<PuntingStatistic> = async (
   playerStatistic,
   gameId,
   teamId,
   athleteId
 ) => {
-  const statistic: Prisma.PuntingStatisticsCreateInput = {
-    punts: stringToNumberOrZero(playerStatistic?.[0]),
-    yards: stringToNumberOrZero(playerStatistic?.[1]),
-    yardsPerPunt: stringToNumberOrZero(playerStatistic?.[2]),
-    touchbacks: stringToNumberOrZero(playerStatistic?.[3]),
-    puntsInside20: stringToNumberOrZero(playerStatistic?.[4]),
-    longest: stringToNumberOrZero(playerStatistic?.[5]),
+  if (!playerStatistic) return null;
+  const statistic: Prisma.PuntingStatisticCreateInput = {
+    punts: stringToNumberOrZero(playerStatistic[0]),
+    yards: stringToNumberOrZero(playerStatistic[1]),
+    yardsPerPunt: stringToNumberOrZero(playerStatistic[2]),
+    touchbacks: stringToNumberOrZero(playerStatistic[3]),
+    puntsInside20: stringToNumberOrZero(playerStatistic[4]),
+    longest: stringToNumberOrZero(playerStatistic[5]),
     gameId: gameId,
   };
   if (teamId) {
@@ -1483,32 +1544,33 @@ const createBasketBallStatistics: (
   teamId,
   athleteId
 ) => {
+  if (!playerStatistic) return null;
   const statistic: Prisma.BasketballStatisticCreateInput = {
-    minutes: stringToNumberOrZero(playerStatistic?.[0]),
-    fieldGoalsMade: stringToNumberOrZero(playerStatistic?.[1]?.split("-")[0]),
+    minutes: stringToNumberOrZero(playerStatistic[0]),
+    fieldGoalsMade: stringToNumberOrZero(playerStatistic[1]?.split("-")[0]),
     fieldGoalsAttempted: stringToNumberOrZero(
-      playerStatistic?.[1]?.split("-")?.[1]
+      playerStatistic[1]?.split("-")?.[1]
     ),
     threePointersAttempted: stringToNumberOrZero(
-      playerStatistic?.[2]?.split("-")?.[0]
+      playerStatistic[2]?.split("-")?.[0]
     ),
     threePointersMade: stringToNumberOrZero(
-      playerStatistic?.[2]?.split("-")?.[1]
+      playerStatistic[2]?.split("-")?.[1]
     ),
     freeThrowsAttempted: stringToNumberOrZero(
-      playerStatistic?.[3]?.split("-")?.[0]
+      playerStatistic[3]?.split("-")?.[0]
     ),
-    freeThrowsMade: stringToNumberOrZero(playerStatistic?.[3]?.split("-")?.[1]),
-    offensiveRebounds: stringToNumberOrZero(playerStatistic?.[4]),
-    defensiveRebounds: stringToNumberOrZero(playerStatistic?.[5]),
-    rebounds: stringToNumberOrZero(playerStatistic?.[6]),
-    assists: stringToNumberOrZero(playerStatistic?.[7]),
-    steals: stringToNumberOrZero(playerStatistic?.[8]),
-    blocks: stringToNumberOrZero(playerStatistic?.[9]),
-    turnovers: stringToNumberOrZero(playerStatistic?.[10]),
-    fouls: stringToNumberOrZero(playerStatistic?.[11]),
-    plusMinus: stringToNumberOrZero(playerStatistic?.[12]),
-    points: stringToNumberOrZero(playerStatistic?.[13]),
+    freeThrowsMade: stringToNumberOrZero(playerStatistic[3]?.split("-")?.[1]),
+    offensiveRebounds: stringToNumberOrZero(playerStatistic[4]),
+    defensiveRebounds: stringToNumberOrZero(playerStatistic[5]),
+    rebounds: stringToNumberOrZero(playerStatistic[6]),
+    assists: stringToNumberOrZero(playerStatistic[7]),
+    steals: stringToNumberOrZero(playerStatistic[8]),
+    blocks: stringToNumberOrZero(playerStatistic[9]),
+    turnovers: stringToNumberOrZero(playerStatistic[10]),
+    fouls: stringToNumberOrZero(playerStatistic[11]),
+    plusMinus: stringToNumberOrZero(playerStatistic[12]),
+    points: stringToNumberOrZero(playerStatistic[13]),
 
     gameId: gameId,
   };
@@ -1532,28 +1594,29 @@ const createSkaterStatistics: (
   teamId,
   athleteId
 ) => {
+  if (!playerStatistic) return null;
   const statistic: Prisma.SkaterStatisticCreateInput = {
-    blockedShots: stringToNumberOrZero(playerStatistic?.[0]),
-    hits: stringToNumberOrZero(playerStatistic?.[1]),
-    takeaways: stringToNumberOrZero(playerStatistic?.[2]),
-    plusMinus: stringToNumberOrZero(playerStatistic?.[3]),
-    timeOnIce: playerStatistic?.[4] ?? "0:00",
-    powerPlayTimeOnIce: playerStatistic?.[5] ?? "0:00",
-    shortHandedTimeOnIce: playerStatistic?.[6] ?? "0:00",
-    evenStrengthTimeOnIce: playerStatistic?.[7] ?? "0:00",
-    shifts: stringToNumberOrZero(playerStatistic?.[8]),
-    goals: stringToNumberOrZero(playerStatistic?.[9]),
-    yearToDateGoals: stringToNumberOrZero(playerStatistic?.[10]),
-    assists: stringToNumberOrZero(playerStatistic?.[11]),
-    shots: stringToNumberOrZero(playerStatistic?.[12]),
-    shotsMissed: stringToNumberOrZero(playerStatistic?.[13]),
-    shootoutGoals: stringToNumberOrZero(playerStatistic?.[14]),
-    faceOffsWon: stringToNumberOrZero(playerStatistic?.[15]),
-    faceOffsLost: stringToNumberOrZero(playerStatistic?.[16]),
-    faceOffPct: stringToNumberOrZero(playerStatistic?.[17]),
-    giveaways: stringToNumberOrZero(playerStatistic?.[18]),
-    penalties: stringToNumberOrZero(playerStatistic?.[19]),
-    penaltyMinutes: stringToNumberOrZero(playerStatistic?.[20]),
+    blockedShots: stringToNumberOrZero(playerStatistic[0]),
+    hits: stringToNumberOrZero(playerStatistic[1]),
+    takeaways: stringToNumberOrZero(playerStatistic[2]),
+    plusMinus: stringToNumberOrZero(playerStatistic[3]),
+    timeOnIce: playerStatistic[4] ?? "0:00",
+    powerPlayTimeOnIce: playerStatistic[5] ?? "0:00",
+    shortHandedTimeOnIce: playerStatistic[6] ?? "0:00",
+    evenStrengthTimeOnIce: playerStatistic[7] ?? "0:00",
+    shifts: stringToNumberOrZero(playerStatistic[8]),
+    goals: stringToNumberOrZero(playerStatistic[9]),
+    yearToDateGoals: stringToNumberOrZero(playerStatistic[10]),
+    assists: stringToNumberOrZero(playerStatistic[11]),
+    shots: stringToNumberOrZero(playerStatistic[12]),
+    shotsMissed: stringToNumberOrZero(playerStatistic[13]),
+    shootoutGoals: stringToNumberOrZero(playerStatistic[14]),
+    faceOffsWon: stringToNumberOrZero(playerStatistic[15]),
+    faceOffsLost: stringToNumberOrZero(playerStatistic[16]),
+    faceOffPct: stringToNumberOrZero(playerStatistic[17]),
+    giveaways: stringToNumberOrZero(playerStatistic[18]),
+    penalties: stringToNumberOrZero(playerStatistic[19]),
+    penaltyMinutes: stringToNumberOrZero(playerStatistic[20]),
 
     gameId: gameId,
   };
@@ -1577,19 +1640,20 @@ const createGoalieStatistics: (
   teamId,
   athleteId
 ) => {
+  if (!playerStatistic) return null;
   const statistic: Prisma.GoalieStatisticCreateInput = {
-    goalsAgainst: stringToNumberOrZero(playerStatistic?.[0]),
-    shotsAgainst: stringToNumberOrZero(playerStatistic?.[1]),
-    shootoutSaves: stringToNumberOrZero(playerStatistic?.[2]),
-    shootoutShotsAgainst: stringToNumberOrZero(playerStatistic?.[3]),
-    saves: stringToNumberOrZero(playerStatistic?.[4]),
-    savePct: stringToNumberOrZero(playerStatistic?.[5]),
-    evenStrengthSaves: stringToNumberOrZero(playerStatistic?.[6]),
-    powerPlaySaves: stringToNumberOrZero(playerStatistic?.[7]),
-    shortHandedSaves: stringToNumberOrZero(playerStatistic?.[8]),
-    timeOnIce: playerStatistic?.[9] ?? "0:00",
-    yearToDateGoals: stringToNumberOrZero(playerStatistic?.[10]),
-    penaltyMinutes: stringToNumberOrZero(playerStatistic?.[11]),
+    goalsAgainst: stringToNumberOrZero(playerStatistic[0]),
+    shotsAgainst: stringToNumberOrZero(playerStatistic[1]),
+    shootoutSaves: stringToNumberOrZero(playerStatistic[2]),
+    shootoutShotsAgainst: stringToNumberOrZero(playerStatistic[3]),
+    saves: stringToNumberOrZero(playerStatistic[4]),
+    savePct: stringToNumberOrZero(playerStatistic[5]),
+    evenStrengthSaves: stringToNumberOrZero(playerStatistic[6]),
+    powerPlaySaves: stringToNumberOrZero(playerStatistic[7]),
+    shortHandedSaves: stringToNumberOrZero(playerStatistic[8]),
+    timeOnIce: playerStatistic[9] ?? "0:00",
+    yearToDateGoals: stringToNumberOrZero(playerStatistic[10]),
+    penaltyMinutes: stringToNumberOrZero(playerStatistic[11]),
 
     gameId: gameId,
   };

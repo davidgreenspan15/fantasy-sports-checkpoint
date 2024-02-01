@@ -81,7 +81,7 @@ export const listTeamAthletes = async (teamId?: string) => {
   });
 };
 
-export const getAthlete = async (id) => {
+export const getAthleteById = async (id) => {
   return await prisma.athlete.findUnique({
     where: {
       id: id,

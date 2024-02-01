@@ -10,7 +10,92 @@ import { getGameById, listTeamGames } from "../models/games";
 import { getGameStatistic } from "../models/GameStatistics";
 import { migrateGameStatistics } from "../handlers/espnApiV2";
 import { listTeamRoster } from "../models/rosters";
+import { omit } from "lodash";
+export interface TodaysBirthdayPlayer {
+  fullName: string;
+  dateOfBirth: Date;
+  birthday: string;
+  espnUrl: string;
+  Position: Position;
+  Team: Team;
+  AthleteGameStatistic: AthleteGameStatistic[];
+}
 
+export interface AthleteGameStatistic {
+  NflStatistic: NflStatistic;
+}
+
+export interface NflStatistic {
+  PassingStatistic: PassingStatistics;
+  RushingStatistic: RushingStatistics;
+  ReceivingStatistic: ReceivingStatistics;
+}
+
+export interface PassingStatistics {
+  id: string;
+  completions: number;
+  attempts: number;
+  yards: number;
+  yardsPerAttempt: number;
+  touchdowns: number;
+  interceptions: number;
+  sacks: number;
+  sackYardsLost: number;
+  adjustedRating: number;
+  rating: number;
+  teamId?: string;
+  athleteId: string;
+  gameId: string;
+}
+
+export interface ReceivingStatistics {
+  id: string;
+  receptions: number;
+  targets: number;
+  yards: number;
+  yardsPerReception: number;
+  touchdowns: number;
+  longest: number;
+  teamId?: string;
+  athleteId: string;
+  gameId: string;
+}
+
+export interface RushingStatistics {
+  id: string;
+  attempts: number;
+  yards: number;
+  yardsPerAttempt: number;
+  touchdowns: number;
+  longest: number;
+  teamId?: string;
+  athleteId: string;
+  gameId: string;
+}
+
+export interface Position {
+  name: string;
+  abbreviation: string;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  abbreviation: string;
+  League: League;
+  Games: Game[];
+}
+
+export interface Game {
+  date: Date;
+  name: string;
+  week: number;
+  "Formatted Dated"?: string;
+}
+
+export interface League {
+  abbreviation: string;
+}
 export const commonRoutes = (app: Express, logger: Logger) => {
   app.get("/resetData", async (req, res) => {
     try {
@@ -87,11 +172,7 @@ export const commonRoutes = (app: Express, logger: Logger) => {
       if (shouldMigrateGame) {
         await migrateGameStatistics([gameId], undefined, undefined);
       }
-      const parentPositions = await listParentPositions();
       const { gameStatistics, game } = await getGameStatistic(gameId);
-      const athletes = await getAthletesById(
-        gameStatistics?.AthleteGameStatistics.map((ags) => ags.athleteId) ?? []
-      );
 
       const mappedGameStatistics = {
         timeOnClock: game.timeOnClock,
@@ -109,24 +190,50 @@ export const commonRoutes = (app: Express, logger: Logger) => {
             return tgs.teamId === t.id;
           }),
         };
-        athletes.forEach((a) => {
-          const athlete = {
-            ...a,
-            positionDisplayName: a.Position.displayName,
-            parentPositionDisplayName: parentPositions.find(
-              (p) => p.espnId === a.Position.parentPositionId
-            )?.displayName,
-            AthleteStatistics: gameStatistics?.AthleteGameStatistics?.find(
-              (ags) => {
-                return ags.athleteId === a.id;
+        const athletesStatistics =
+          gameStatistics?.AthleteGameStatistics?.reduce((acc, a) => {
+            if (a.Athlete.teamId !== t.id) {
+              return acc;
+            }
+            Object.keys(a).forEach((key) => {
+              if (key != "athleteId" && key != "Athlete") {
+                const v = a[key];
+                if (v && typeof v === "object") {
+                  Object.keys(v).forEach((k) => {
+                    if (v[k] !== null) {
+                      const stats = omit(v[k], [
+                        "teamId",
+                        "athleteId",
+                        "gameId",
+                        "id",
+                      ]);
+                      if (!acc[k]) {
+                        const athleteStats = {
+                          athleteId: a.athleteId,
+                          displayName: a.Athlete.displayName,
+                          imageUrl: a.Athlete.imageUrl,
+                          position: a.Athlete.Position.abbreviation,
+                          ...stats,
+                        };
+                        acc[k] = [athleteStats];
+                      } else {
+                        const athleteStats = {
+                          athleteId: a.athleteId,
+                          displayName: a.Athlete.displayName,
+                          imageUrl: a.Athlete.imageUrl,
+                          position: a.Athlete.Position.abbreviation,
+                          ...stats,
+                        };
+                        acc[k].push(athleteStats);
+                      }
+                    }
+                  });
+                }
               }
-            ),
-          };
-          if (!team["Athletes"]) {
-            team["Athletes"] = [];
-          }
-          team["Athletes"].push(athlete);
-        });
+            });
+            return acc;
+          }, {});
+        team["athletesStatistics"] = athletesStatistics;
         mappedGameStatistics.teams.push(team);
       });
 
@@ -181,30 +288,39 @@ export const commonRoutes = (app: Express, logger: Logger) => {
           return await todaysBirthday(game.date);
         })
       );
-      const playersWithBirthdays = playersWithBrithdays.flatMap(
-        (p) => p.playerWithBirthdays
-      );
+      const playersWithBirthdays = playersWithBrithdays.reduce((acc, p) => {
+        p.playerWithBirthdays.forEach((pwb) => {
+          if (!acc[pwb.espnUrl]) {
+            acc[pwb.espnUrl] = pwb;
+          }
+        });
+        return acc;
+      }, {} as Record<string, TodaysBirthdayPlayer>);
 
-      const successFullPlayers = playersWithBirthdays.filter((p) => {
-        return (
-          p.AthleteGameStatistic?.[0]?.NflStatistic?.PassingStatistics
-            .touchdowns > 0 ||
-          p.AthleteGameStatistic?.[0]?.NflStatistic?.RushingStatistics
-            .touchdowns > 0 ||
-          p.AthleteGameStatistic?.[0]?.NflStatistic?.ReceivingStatistics
-            .touchdowns > 0
-        );
-      });
-      const unsuccessfulPlayers = playersWithBirthdays.filter((p) => {
-        return (
-          p.AthleteGameStatistic?.[0]?.NflStatistic?.PassingStatistics
-            .touchdowns === 0 &&
-          p.AthleteGameStatistic?.[0]?.NflStatistic?.RushingStatistics
-            .touchdowns === 0 &&
-          p.AthleteGameStatistic?.[0]?.NflStatistic?.ReceivingStatistics
-            .touchdowns === 0
-        );
-      });
+      const successFullPlayers = Object.values(playersWithBirthdays).filter(
+        (p) => {
+          return (
+            p.AthleteGameStatistic?.[0]?.NflStatistic?.PassingStatistic
+              .touchdowns > 0 ||
+            p.AthleteGameStatistic?.[0]?.NflStatistic?.RushingStatistic
+              .touchdowns > 0 ||
+            p.AthleteGameStatistic?.[0]?.NflStatistic?.ReceivingStatistic
+              .touchdowns > 0
+          );
+        }
+      );
+      const unsuccessfulPlayers = Object.values(playersWithBirthdays).filter(
+        (p) => {
+          return (
+            p.AthleteGameStatistic?.[0]?.NflStatistic?.PassingStatistic
+              .touchdowns === 0 &&
+            p.AthleteGameStatistic?.[0]?.NflStatistic?.RushingStatistic
+              .touchdowns === 0 &&
+            p.AthleteGameStatistic?.[0]?.NflStatistic?.ReceivingStatistic
+              .touchdowns === 0
+          );
+        }
+      );
       res.status(200).json({
         successFullPlayersCount: successFullPlayers.length,
         unsuccessfulPlayersCount: unsuccessfulPlayers.length,

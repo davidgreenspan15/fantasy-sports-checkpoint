@@ -42,16 +42,16 @@ export const getGameStatistic = async (gameId: string) => {
             include: {
               AthleteTotalStatistics: {
                 select: {
-                  PassingStatistics: true,
-                  RushingStatistics: true,
-                  ReceivingStatistics: true,
-                  KickingStatistics: true,
-                  PuntingStatistics: true,
-                  KickReturnStatistics: true,
-                  DefensiveStatistics: true,
-                  FumbleStatistics: true,
-                  InterceptionStatistics: true,
-                  PuntReturnStatistics: true,
+                  PassingStatistic: true,
+                  RushingStatistic: true,
+                  ReceivingStatistic: true,
+                  KickingStatistic: true,
+                  PuntingStatistic: true,
+                  KickReturnStatistic: true,
+                  DefensiveStatistic: true,
+                  FumbleStatistic: true,
+                  InterceptionStatistic: true,
+                  PuntReturnStatistic: true,
                 },
               },
             },
@@ -80,18 +80,32 @@ export const getGameStatistic = async (gameId: string) => {
       AthleteGameStatistics: {
         select: {
           athleteId: true,
+          Athlete: {
+            select: {
+              id: true,
+              displayName: true,
+              imageUrl: true,
+              teamId: true,
+              Position: {
+                select: {
+                  name: true,
+                  abbreviation: true,
+                },
+              },
+            },
+          },
           NflStatistic: {
             select: {
-              PassingStatistics: true,
-              RushingStatistics: true,
-              ReceivingStatistics: true,
-              KickingStatistics: true,
-              PuntingStatistics: true,
-              KickReturnStatistics: true,
-              DefensiveStatistics: true,
-              FumbleStatistics: true,
-              InterceptionStatistics: true,
-              PuntReturnStatistics: true,
+              PassingStatistic: true,
+              RushingStatistic: true,
+              ReceivingStatistic: true,
+              KickingStatistic: true,
+              PuntingStatistic: true,
+              KickReturnStatistic: true,
+              DefensiveStatistic: true,
+              FumbleStatistic: true,
+              InterceptionStatistic: true,
+              PuntReturnStatistic: true,
             },
           },
           NbaStatistic: {

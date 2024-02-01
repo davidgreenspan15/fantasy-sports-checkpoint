@@ -18,7 +18,6 @@ import { upsertDepths } from "../models/depths";
 import { Logger } from "winston";
 import { prisma } from "..";
 import { ListAllNflGamesResponse } from "../types/games";
-import { upsertRosters } from "../models/rosters";
 
 export const migrateTeams = async () => {
   // Get Leagues

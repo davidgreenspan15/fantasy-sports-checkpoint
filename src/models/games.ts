@@ -90,51 +90,6 @@ export const listAllNflGames = async (
           id: true,
           jsonPayload: true,
           isComplete: true,
-          TeamGameStatistics: {
-            select: {
-              id: true,
-              NflStatistic: {
-                select: {
-                  id: true,
-                  AthleteTotalStatistics: {
-                    select: {
-                      id: true,
-                      PassingStatistics: { select: { id: true } },
-                      RushingStatistics: { select: { id: true } },
-                      ReceivingStatistics: { select: { id: true } },
-                      KickingStatistics: { select: { id: true } },
-                      PuntingStatistics: { select: { id: true } },
-                      KickReturnStatistics: { select: { id: true } },
-                      PuntReturnStatistics: { select: { id: true } },
-                      DefensiveStatistics: { select: { id: true } },
-                      FumbleStatistics: { select: { id: true } },
-                      InterceptionStatistics: { select: { id: true } },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          AthleteGameStatistics: {
-            select: {
-              id: true,
-              NflStatistic: {
-                select: {
-                  id: true,
-                  PassingStatistics: { select: { id: true } },
-                  RushingStatistics: { select: { id: true } },
-                  ReceivingStatistics: { select: { id: true } },
-                  KickingStatistics: { select: { id: true } },
-                  PuntingStatistics: { select: { id: true } },
-                  KickReturnStatistics: { select: { id: true } },
-                  PuntReturnStatistics: { select: { id: true } },
-                  DefensiveStatistics: { select: { id: true } },
-                  FumbleStatistics: { select: { id: true } },
-                  InterceptionStatistics: { select: { id: true } },
-                },
-              },
-            },
-          },
         },
       },
     },
@@ -254,6 +209,10 @@ export const getGameById = async (gameId: string) => {
 export const listAllGamesWithGameStatistics = async () => {
   return await prisma.game.findMany({
     where: {
+      // Payloads become too big so need to break it down
+      // League:{
+      //   OR: [{ slug: "nba" }, { slug: "nfl" }, { slug: "nhl" }],
+      // },
       Statistics: {
         jsonPayload: {
           not: null,
@@ -279,51 +238,6 @@ export const listAllGamesWithGameStatistics = async () => {
           id: true,
           jsonPayload: true,
           isComplete: true,
-          TeamGameStatistics: {
-            select: {
-              id: true,
-              NflStatistic: {
-                select: {
-                  id: true,
-                  AthleteTotalStatistics: {
-                    select: {
-                      id: true,
-                      PassingStatistics: { select: { id: true } },
-                      RushingStatistics: { select: { id: true } },
-                      ReceivingStatistics: { select: { id: true } },
-                      KickingStatistics: { select: { id: true } },
-                      PuntingStatistics: { select: { id: true } },
-                      KickReturnStatistics: { select: { id: true } },
-                      PuntReturnStatistics: { select: { id: true } },
-                      DefensiveStatistics: { select: { id: true } },
-                      FumbleStatistics: { select: { id: true } },
-                      InterceptionStatistics: { select: { id: true } },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          AthleteGameStatistics: {
-            select: {
-              id: true,
-              NflStatistic: {
-                select: {
-                  id: true,
-                  PassingStatistics: { select: { id: true } },
-                  RushingStatistics: { select: { id: true } },
-                  ReceivingStatistics: { select: { id: true } },
-                  KickingStatistics: { select: { id: true } },
-                  PuntingStatistics: { select: { id: true } },
-                  KickReturnStatistics: { select: { id: true } },
-                  PuntReturnStatistics: { select: { id: true } },
-                  DefensiveStatistics: { select: { id: true } },
-                  FumbleStatistics: { select: { id: true } },
-                  InterceptionStatistics: { select: { id: true } },
-                },
-              },
-            },
-          },
         },
       },
     },
