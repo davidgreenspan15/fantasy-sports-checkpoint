@@ -121,6 +121,13 @@ export const createTeam: (
   };
 };
 
+//TBD
+// const createConferenceAndDivision: (
+//   team: EspnApiV2.ResponseTeamList.TeamTeam
+// ) => {} = async (team) => {
+
+// };
+
 export const createGame: (
   event: EspnApiV2.ResponseTeamSchedule.Event,
   leagueId: string,
@@ -361,6 +368,9 @@ export const mapIdenticalGames: (
         const isHome =
           e.competitions[0].competitors.find((c) => c.id === sr.teamId)
             ?.homeAway === "home";
+        const isAway =
+          e.competitions[0].competitors.find((c) => c.id === sr.teamId)
+            ?.homeAway === "away";
         if (isHome) {
           gameHash[`${e.id}_${sr.leagueId}`] = {
             homeTeamId: sr.teamId,
@@ -369,7 +379,7 @@ export const mapIdenticalGames: (
             event: e,
             season: sr.schedule.season,
           };
-        } else {
+        } else if (isAway) {
           gameHash[`${e.id}_${sr.leagueId}`] = {
             awayTeamId: sr.teamId,
             homeTeamId: undefined,
@@ -837,52 +847,52 @@ const createNflAthleteStatistics: (
     gameId: gameId,
   };
   if (passingStatistics) {
-    athleteStatistics["PassingStatistics"] = {
+    athleteStatistics["PassingStatistic"] = {
       connect: { id: passingStatistics.id },
     };
   }
   if (rushingStatistics) {
-    athleteStatistics["RushingStatistics"] = {
+    athleteStatistics["RushingStatistic"] = {
       connect: { id: rushingStatistics.id },
     };
   }
   if (receivingStatistics) {
-    athleteStatistics["ReceivingStatistics"] = {
+    athleteStatistics["ReceivingStatistic"] = {
       connect: { id: receivingStatistics.id },
     };
   }
   if (fumbleStatistics) {
-    athleteStatistics["FumbleStatistics"] = {
+    athleteStatistics["FumbleStatistic"] = {
       connect: { id: fumbleStatistics.id },
     };
   }
   if (kickingStatistics) {
-    athleteStatistics["KickingStatistics"] = {
+    athleteStatistics["KickingStatistic"] = {
       connect: { id: kickingStatistics.id },
     };
   }
   if (puntingStatistics) {
-    athleteStatistics["PuntingStatistics"] = {
+    athleteStatistics["PuntingStatistic"] = {
       connect: { id: puntingStatistics.id },
     };
   }
   if (kickReturnStatistics) {
-    athleteStatistics["KickReturnStatistics"] = {
+    athleteStatistics["KickReturnStatistic"] = {
       connect: { id: kickReturnStatistics.id },
     };
   }
   if (puntReturnStatistics) {
-    athleteStatistics["PuntReturnStatistics"] = {
+    athleteStatistics["PuntReturnStatistic"] = {
       connect: { id: puntReturnStatistics.id },
     };
   }
   if (defensiveStatistics) {
-    athleteStatistics["DefensiveStatistics"] = {
+    athleteStatistics["DefensiveStatistic"] = {
       connect: { id: defensiveStatistics.id },
     };
   }
   if (interceptionStatistics) {
-    athleteStatistics["InterceptionStatistics"] = {
+    athleteStatistics["InterceptionStatistic"] = {
       connect: { id: interceptionStatistics.id },
     };
   }

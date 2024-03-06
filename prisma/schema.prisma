@@ -25,10 +25,10 @@ model Season {
 }
 
 model League {
-  id           String     @id @default(uuid())
-  espnId       String     @map(name: "espn_id")
+  id           String       @id @default(uuid())
+  espnId       String       @map(name: "espn_id")
   name         String
-  shortName    String     @map(name: "short_name")
+  shortName    String       @map(name: "short_name")
   abbreviation String
   slug         String
   sport        String
@@ -38,12 +38,51 @@ model League {
   Positions    Position[]
   Depths       Depth[]
   Roster       Roster[]
+  Conferences  Conference[]
+  Divisions    Division[]
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
 
   @@unique([sport, espnId])
   @@map(name: "leagues")
+}
+
+model Conference {
+  id           String     @id @default(uuid())
+  uid          String     @unique
+  espnId       String     @map(name: "espn_id")
+  name         String
+  abbreviation String
+  Teams        Team[]
+  Divisions    Division[]
+  League       League     @relation(fields: [leagueId], references: [id])
+  leagueId     String     @map(name: "league_id")
+
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime? @map(name: "updated_at")
+
+  @@unique([espnId, leagueId])
+  @@map(name: "conferences")
+}
+
+model Division {
+  id           String     @id @default(uuid())
+  uid          String     @unique
+  espnId       String     @map(name: "espn_id")
+  name         String
+  abbreviation String
+  Teams        Team[]
+  Conference   Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId String     @map(name: "conference_id")
+  League       League     @relation(fields: [leagueId], references: [id])
+  leagueId     String     @map(name: "league_id")
+
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime? @map(name: "updated_at")
+
+  @@unique([espnId, leagueId])
+  @@map(name: "divisions")
 }
 
 model Team {
@@ -67,6 +106,10 @@ model Team {
   Roster            Roster[]
   League            League              @relation(fields: [leagueId], references: [id])
   leagueId          String              @map(name: "league_id")
+  Conference        Conference?         @relation(fields: [conferenceId], references: [id])
+  conferenceId      String?
+  Division          Division?           @relation(fields: [divisionId], references: [id])
+  divisionId        String?
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
