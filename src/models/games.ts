@@ -44,10 +44,7 @@ export const listAllNflGames = async (
 ) => {
   const whereClause = {
     League: {
-      OR: [
-        // { slug: "nba" }, { slug: "nfl" }, { slug: "nhl" },
-        { slug: "mlb" },
-      ],
+      OR: [{ slug: "nba" }, { slug: "nfl" }, { slug: "nhl" }, { slug: "mlb" }],
     },
   };
   if (gameIds.length > 0) {
@@ -87,7 +84,8 @@ export const listAllNflGames = async (
           id: true,
         },
       },
-      Teams: { select: { espnId: true, id: true } },
+      AwayTeam: { select: { espnId: true, id: true } },
+      HomeTeam: { select: { espnId: true, id: true } },
       Statistics: {
         select: {
           id: true,
@@ -113,7 +111,31 @@ export const listTeamGames = async (
     week: true,
     isComplete: true,
     homeTeamId: true,
+    HomeTeam: {
+      select: {
+        id: true,
+        name: true,
+        abbreviation: true,
+        displayName: true,
+        location: true,
+        imageUrl: true,
+        color: true,
+        alternateColor: true,
+      },
+    },
     awayTeamId: true,
+    AwayTeam: {
+      select: {
+        id: true,
+        name: true,
+        abbreviation: true,
+        displayName: true,
+        location: true,
+        imageUrl: true,
+        color: true,
+        alternateColor: true,
+      },
+    },
     period: true,
     Statistics: {
       select: {
@@ -139,7 +161,10 @@ export const listTeamGames = async (
     });
   }
   return await prisma.game.findMany({
-    where: { ...where, Teams: { some: { id: teamId } } },
+    where: {
+      ...where,
+      OR: [{ HomeTeam: { id: teamId } }, { AwayTeam: { id: teamId } }],
+    },
     select,
     orderBy: { date: "asc" },
   });
@@ -197,7 +222,19 @@ export const getGameById = async (gameId: string) => {
           isComplete: true,
         },
       },
-      Teams: {
+      HomeTeam: {
+        select: {
+          id: true,
+          name: true,
+          abbreviation: true,
+          displayName: true,
+          location: true,
+          imageUrl: true,
+          color: true,
+          alternateColor: true,
+        },
+      },
+      AwayTeam: {
         select: {
           id: true,
           name: true,
@@ -241,7 +278,8 @@ export const listAllGamesWithGameStatistics = async () => {
           id: true,
         },
       },
-      Teams: { select: { espnId: true, id: true } },
+      HomeTeam: { select: { espnId: true, id: true } },
+      AwayTeam: { select: { espnId: true, id: true } },
       Statistics: {
         select: {
           id: true,

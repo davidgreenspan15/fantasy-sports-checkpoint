@@ -20,7 +20,12 @@ export const reconnectAthletesGamesTeamsToLeagues = async () => {
       id: true,
       espnId: true,
       uid: true,
-      Games: {
+      HomeGames: {
+        select: {
+          id: true,
+        },
+      },
+      AwayGames: {
         select: {
           id: true,
         },
@@ -43,7 +48,7 @@ export const reconnectAthletesGamesTeamsToLeagues = async () => {
       matchedTeams.push({
         teamId: team.id,
         leagueId: league.id,
-        Games: team.Games,
+        Games: [...team.HomeGames, ...team.AwayGames],
       });
     }
   });

@@ -160,9 +160,7 @@ export const espnResponseHandler = {
       games.push(game);
     });
     // Connect Identical Games
-    return games.filter(
-      (g) => (g.Teams?.connect as Prisma.TeamWhereUniqueInput[])?.length > 0
-    );
+    return games;
   },
   handleTeamRosterResponse: async (
     rosterResponse: {
@@ -375,8 +373,6 @@ export const espnResponseHandler = {
       games.push(game);
     });
 
-    return games.filter(
-      (g) => (g.Teams?.connect as Prisma.TeamWhereUniqueInput[])?.length > 0
-    );
+    return games;
   },
 };

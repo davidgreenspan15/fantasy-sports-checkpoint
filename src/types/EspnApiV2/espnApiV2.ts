@@ -570,10 +570,12 @@ export namespace EspnApiV2 {
 
     export enum SeasonTypeAbbreviation {
       Reg = "reg",
+      Post = "post",
     }
 
     export enum SeasonTypeName {
       RegularSeason = "Regular Season",
+      Postseason = "Postseason",
     }
 
     export interface Week {

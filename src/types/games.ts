@@ -13,10 +13,14 @@ export interface ListAllNflGamesResponse {
     slug: string;
     sport: string;
   };
-  Teams: {
+  HomeTeam: {
     id: string;
     espnId: string;
-  }[];
+  };
+  AwayTeam: {
+    id: string;
+    espnId: string;
+  };
   Statistics: {
     id: string;
     isComplete: boolean;

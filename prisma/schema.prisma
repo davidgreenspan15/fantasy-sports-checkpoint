@@ -97,7 +97,8 @@ model Team {
   isActive          Boolean             @map(name: "is_active")
   color             String?
   alternateColor    String?             @map(name: "alternate_color")
-  Games             Game[]
+  HomeGames         Game[]              @relation("HomeGames")
+  AwayGames         Game[]              @relation("AwayGames")
   Athletes          Athlete[]
   TeamGameStatistic TeamGameStatistic[]
   Roster            Roster[]
@@ -220,10 +221,11 @@ model Game {
   isComplete  Boolean        @default(false) @map(name: "is_complete")
   timeOnClock String?        @map(name: "time_on_clock")
   period      Int?           @map(name: "period")
+  HomeTeam    Team?          @relation("HomeGames", fields: [homeTeamId], references: [id])
   homeTeamId  String?        @map(name: "home_team_id")
+  AwayTeam    Team?          @relation("AwayGames", fields: [awayTeamId], references: [id])
   awayTeamId  String?        @map(name: "away_team_id")
   Statistics  GameStatistic?
-  Teams       Team[]
   Season      Season         @relation(fields: [seasonId], references: [id])
   seasonId    String         @map(name: "season_id")
   League      League         @relation(fields: [leagueId], references: [id])

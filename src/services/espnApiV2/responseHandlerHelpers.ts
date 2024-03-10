@@ -189,7 +189,7 @@ export const createGame: (
     week: event.week?.number ?? null,
     isComplete: event.competitions?.[0]?.status?.type?.completed ?? false,
     League: { connect: { id: leagueId } },
-    Teams: { connect: [] },
+
     Season: {
       connectOrCreate: {
         where: {
@@ -207,15 +207,18 @@ export const createGame: (
     },
   };
   if (homeTeamId) {
-    game["homeTeamId"] = homeTeamId;
-    (game.Teams.connect as Prisma.TeamWhereUniqueInput[]).push({
-      id: homeTeamId,
-    });
-  } else if (awayTeamId) {
-    game["awayTeamId"] = awayTeamId;
-    (game.Teams.connect as Prisma.TeamWhereUniqueInput[]).push({
-      id: awayTeamId,
-    });
+    game["HomeTeam"] = {
+      connect: {
+        id: homeTeamId,
+      },
+    };
+  }
+  if (awayTeamId) {
+    game["AwayTeam"] = {
+      connect: {
+        id: awayTeamId,
+      },
+    };
   }
   return game;
 };
@@ -270,7 +273,9 @@ const createAthlete: (
     number: athlete.jersey,
     isInjured: isInjured,
     injuryStatus: isInjured ? athlete["injuries"][0].status : null,
-    imageUrl: athlete.headshot?.href ?? "",
+    imageUrl:
+      athlete.headshot?.href ??
+      "https://a.espncdn.com/combiner/i?img=/i/headshots/nophoto.png",
     Position: {
       connect: {
         espnId_leagueId: { espnId: athlete.position.id, leagueId: leagueId },
@@ -390,7 +395,7 @@ export const mapIdenticalGames: (
     }
   > = {};
   scheduleResponse.forEach((sr) => {
-    return sr.schedule.events.forEach((e) => {
+    sr.schedule.events.forEach((e) => {
       if (gameHash[`${e.id}_${sr.leagueId}`]) {
         const value = gameHash[`${e.id}_${sr.leagueId}`];
         if (value.awayTeamId) {
@@ -406,11 +411,13 @@ export const mapIdenticalGames: (
         }
       } else {
         const isHome =
-          e.competitions[0].competitors.find((c) => c.id === sr.teamId)
-            ?.homeAway === "home";
+          e.competitions[0].competitors.find(
+            (c) => c.id === sr.schedule.team.id
+          )?.homeAway === "home";
         const isAway =
-          e.competitions[0].competitors.find((c) => c.id === sr.teamId)
-            ?.homeAway === "away";
+          e.competitions[0].competitors.find(
+            (c) => c.id === sr.schedule.team.id
+          )?.homeAway === "away";
         if (isHome) {
           gameHash[`${e.id}_${sr.leagueId}`] = {
             homeTeamId: sr.teamId,
@@ -446,7 +453,7 @@ export const mapIdenticalYearlyGames: (
   teams: Team[]
 ) => GameMap[] = (weeklyScheduleResponse, teams) => {
   return weeklyScheduleResponse.events
-    .filter((t) => t.season.year === 2023 && t.season.type === 2)
+    .filter((t) => t.season.year === 2023 && t.season.type === 3)
     .map((e) => {
       const homeTeamId = teams.find(
         (t) =>
@@ -459,21 +466,22 @@ export const mapIdenticalYearlyGames: (
           e.competitions[0].competitors.find((c) => c.homeAway === "away")?.id
       )?.id;
       e["seasonType"] = {
-        id: "2",
-        type: 2,
-        name: "Regular Season",
-        abbreviation: "reg",
+        id: "3",
+        type: 3,
+        name: EspnApiV2.ResponseTeamSchedule.SeasonTypeName.Postseason,
+        abbreviation:
+          EspnApiV2.ResponseTeamSchedule.SeasonTypeAbbreviation.Post,
       };
       e["timeValid"] = true;
       //@ts-ignore
       const event: EspnApiV2.ResponseTeamSchedule.Event = {
         ...e,
         seasonType: {
-          id: "2",
-          type: 2,
-          name: EspnApiV2.ResponseTeamSchedule.SeasonTypeName.RegularSeason,
+          id: "3",
+          type: 3,
+          name: EspnApiV2.ResponseTeamSchedule.SeasonTypeName.Postseason,
           abbreviation:
-            EspnApiV2.ResponseTeamSchedule.SeasonTypeAbbreviation.Reg,
+            EspnApiV2.ResponseTeamSchedule.SeasonTypeAbbreviation.Post,
         },
         timeValid: true,
         season: {
@@ -526,10 +534,10 @@ export const createTeamGameStatistics: (
 ) => {
   const savedTeamGameStatistics = Promise.all(
     boxscore.teams.map(async (t) => {
-      const team = game.Teams.find((gt) => gt.espnId === t.team.id);
-      const isHomeTeam = game.homeTeamId === team.id;
+      const isHomeTeam = game.HomeTeam.espnId === t.team.id;
+      const team = isHomeTeam ? game.HomeTeam : game.AwayTeam;
       const playerStatistics = boxscore.players?.find((p) => {
-        return game.Teams.map((t) => t.espnId).includes(p.team.id);
+        return team.espnId === p.team.id;
       })?.statistics;
 
       const teamGameStatistics: Prisma.TeamGameStatisticCreateInput = {
@@ -610,7 +618,9 @@ export const createAthleteGameStatistics: (
 ) => {
   const athleteHash = boxscore.players?.reduce((acc, p) => {
     const isMlbGame = game.League.slug === "mlb";
-    const team = game.Teams.find((gt) => gt.espnId === p.team.id);
+    const team = [game.AwayTeam, game.HomeTeam].find(
+      (gt) => gt.espnId === p.team.id
+    );
     p.statistics.forEach((s) => {
       return s.athletes.forEach((a) => {
         const athlete = athletes.find((at) => at.guid === a.athlete.guid);

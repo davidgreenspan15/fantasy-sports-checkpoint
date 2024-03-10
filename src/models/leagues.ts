@@ -57,7 +57,30 @@ export const listLeaguesWithTeams = async () => {
           imageUrl: true,
           color: true,
           alternateColor: true,
-          Games: {
+          Division: {
+            select: {
+              id: true,
+              name: true,
+              Conference: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          AwayGames: {
+            select: {
+              Season: {
+                select: {
+                  displayYear: true,
+                  type: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          HomeGames: {
             select: {
               Season: {
                 select: {
