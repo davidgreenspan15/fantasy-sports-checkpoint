@@ -4,10 +4,13 @@ import { EspnApiV2 } from "../../types/EspnApiV2/espnApiV2";
 import { ListAllNflGamesResponse } from "../../types/games";
 import {
   createAthleteGameStatistics,
+  createConference,
   createDepth,
+  createDivision,
   createGame,
   createGameStatistic,
   createLeagueAthlete,
+  createPosition,
   createTeam,
   createTeamAthlete,
   createTeamGameStatistics,
@@ -18,9 +21,113 @@ import {
 } from "./responseHandlerHelpers";
 import { updateGameStatisticsIsComplete } from "../../models/GameStatistics";
 import { upsertRosters } from "../../models/rosters";
-import { updateGameIsComplete, updateGameStatus } from "../../models/games";
+import { updateGameStatus } from "../../models/games";
 
 export const espnResponseHandler = {
+  handleGroupsResponse: (
+    leagueGroupsResponse: {
+      conferences: EspnApiV2.GroupResponse[];
+      divisions: {
+        resp: {
+          division: EspnApiV2.ResponseGroup.Group;
+          divisionTeams: {
+            divisionId: string;
+            leagueId: string;
+            teamId: string;
+          }[];
+        }[];
+        conferenceId: string;
+      }[];
+      leagueId: string;
+    }[]
+  ) => {
+    const conferences: Prisma.ConferenceCreateInput[] = [];
+    const divisions: Prisma.DivisionCreateInput[] = [];
+    const teamDivisions: {
+      divisionId: string;
+      leagueId: string;
+      teamId: string;
+    }[] = [];
+
+    leagueGroupsResponse.forEach((lg) => {
+      lg.conferences.forEach((c) => {
+        const conference = createConference(c, lg.leagueId);
+        conferences.push(conference);
+      });
+      lg.divisions.forEach((d) => {
+        d.resp.forEach((r) => {
+          const division = createDivision(
+            r.division,
+            lg.leagueId,
+            d.conferenceId
+          );
+          divisions.push(division);
+        });
+      });
+      lg.divisions.forEach((d) => {
+        d.resp.forEach((r) => {
+          r.divisionTeams.forEach((dt) => {
+            const teamDivision = {
+              divisionId: r.division.id,
+              leagueId: lg.leagueId,
+              teamId: dt.teamId,
+            };
+            teamDivisions.push(teamDivision);
+          });
+        });
+      });
+    });
+
+    return { conferences, divisions, teamDivisions };
+  },
+
+  handleTeamToConnectToDivisionsResponse: (
+    teamsToConnectToDivision: EspnApiV2.ResponseCoreList.Item[],
+    divisionId: string,
+    leagueId: string
+  ) => {
+    return Object.values(
+      teamsToConnectToDivision.reduce((acc, t) => {
+        const refSplit = t.$ref.split("/");
+        const teamId = refSplit[refSplit.length - 1].split("?")[0];
+        if (!acc[`${divisionId}_${leagueId}_${teamId}`]) {
+          acc[`${divisionId}_${leagueId}_${teamId}`] = {
+            divisionId: divisionId,
+            leagueId: leagueId,
+            teamId,
+          };
+        } else {
+          acc[`${divisionId}_${leagueId}_${teamId}`] = {
+            divisionId: divisionId,
+            leagueId: leagueId,
+            teamId,
+          };
+        }
+
+        return acc;
+      }, {} as { [key: string]: { divisionId: string; leagueId: string; teamId: string } })
+    );
+  },
+  handlePositionsResponse: (
+    leaguePositionsResponse: {
+      positions: EspnApiV2.PositionResponse[];
+      leagueId: string;
+    }[]
+  ) => {
+    const positions: Prisma.PositionCreateInput[] = [];
+    leaguePositionsResponse.forEach((lp) => {
+      lp.positions.forEach((p) => {
+        const position: Prisma.PositionCreateInput = createPosition(
+          p,
+          lp.leagueId
+        );
+        positions.push(position);
+      });
+    });
+
+    return positions;
+  },
+
   handleSportsTeamsResponse: (
     sportTeamListResponses: {
       teamSports: EspnApiV2.TeamListResponse;
@@ -65,7 +172,6 @@ export const espnResponseHandler = {
     }[]
   ) => {
     const teamAthletes: Prisma.AthleteCreateInput[] = [];
-    const parentPositions: Prisma.PositionCreateInput[][] = [];
     const savedTeamRosters: Roster[] = [];
     await Promise.all(
       rosterResponse.map(async (sr) => {
@@ -96,16 +202,13 @@ export const espnResponseHandler = {
               .athletes as EspnApiV2.ResponseTeamRoster.Item[];
           }
           a.items?.forEach((i) => {
-            const { teamAthlete, positions } = createTeamAthlete(
+            const { teamAthlete } = createTeamAthlete(
               i,
               sr.teamId,
               sr.leagueId,
               savedTeamRoster?.id
             );
             teamAthletes.push(teamAthlete);
-            if (positions) {
-              parentPositions.push(positions);
-            }
           });
         });
         savedTeamRosters.push(savedTeamRoster);
@@ -113,7 +216,6 @@ export const espnResponseHandler = {
     );
     return {
       teamAthletes,
-      parentPositions: parentPositions.flat(),
       savedTeamRosters,
     };
   },
@@ -188,20 +290,13 @@ export const espnResponseHandler = {
     }[]
   ) => {
     const athletes: Prisma.AthleteCreateInput[] = [];
-    const positions: Prisma.PositionCreateInput[] = [];
 
     leagueAthleteResponse.forEach((sr) => {
-      const { leagueAthlete, position } = createLeagueAthlete(
-        sr.athlete,
-        sr.leagueId
-      );
+      const { leagueAthlete } = createLeagueAthlete(sr.athlete, sr.leagueId);
       athletes.push(leagueAthlete);
-      if (position) {
-        positions.push(position);
-      }
     });
 
-    return { athletes, positions };
+    return { athletes };
   },
   handleGameSummaryResponse: async (
     gameSummaryResponse: {

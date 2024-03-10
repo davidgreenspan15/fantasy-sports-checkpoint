@@ -8,14 +8,14 @@ import {
   todaysBirthday,
 } from "../handlers/common";
 import { prisma } from "..";
-import { getAthletesById, listTeamAthletes } from "../models/athletes";
+import { listTeamAthletes } from "../models/athletes";
 import { listParentPositions } from "../models/positions";
-import { listLeaguesWithTeams } from "../models/leagues";
 import { getGameById, listTeamGames } from "../models/games";
 import { getGameStatistic } from "../models/GameStatistics";
 import { migrateGameStatistics } from "../handlers/espnApiV2";
 import { listTeamRoster } from "../models/rosters";
 import { omit } from "lodash";
+import { Position as PrismaPosition } from "@prisma/client";
 export interface TodaysBirthdayPlayer {
   fullName: string;
   dateOfBirth: Date;
@@ -130,7 +130,7 @@ export const commonRoutes = (app: Express, logger: Logger) => {
           ...ta,
           positionDisplayName: ta.Position.displayName,
           parentPositionDisplayName: parentPositions.find(
-            (p) => p.espnId === ta.Position.parentPositionId
+            (p) => p.espnId === ta.Position.parentId
           )?.displayName,
           Position: undefined,
         };
@@ -250,20 +250,35 @@ export const commonRoutes = (app: Express, logger: Logger) => {
     }
   });
 
+  type PositionsWithNestedParent = PrismaPosition & { Parent?: PrismaPosition };
   app.post("/getRoster", async (req, res) => {
     try {
       const teamId = req.body.teamId;
       const displayYear = req.body.displayYear;
       const seasonType = req.body.seasonType;
-      const parentPositions = await listParentPositions();
       const roster = await listTeamRoster(displayYear, seasonType, teamId);
-      const athletes = roster?.Athletes.map((a) => {
+      const athletes = roster?.Athletes.filter((a) => !!a.Position).map((a) => {
+        const findParentPosition = (position: PositionsWithNestedParent) => {
+          if (position.Parent) {
+            return position.Parent;
+          }
+        };
+
+        const findRootParentPosition = (
+          position: PositionsWithNestedParent
+        ) => {
+          if (position.Parent) {
+            return findRootParentPosition(position.Parent);
+          }
+          return position;
+        };
         return {
           ...a,
-          positionDisplayName: a.Position.displayName,
-          parentPositionDisplayName: parentPositions.find(
-            (p) => p.espnId === a.Position.parentPositionId
-          )?.displayName,
+          positionDisplayName: a.Position?.displayName,
+          rootParentPositionDisplayName: findRootParentPosition(a.Position)
+            ?.displayName,
+          parentPositionDisplayName: findParentPosition(a.Position)
+            ?.displayName,
           Position: undefined,
         };
       });

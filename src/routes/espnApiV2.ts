@@ -2,11 +2,13 @@ import { Express } from "express";
 import { Logger } from "winston";
 
 import {
+  migrateConferenceAndDivisions,
   migrateDepths,
   migrateFreeAgentAthletes,
   migrateGames,
   migrateGameStatistics,
   migrateMissingNflGames,
+  migratePositions,
   migrateTeamAthletes,
   migrateTeams,
 } from "../handlers/espnApiV2";
@@ -22,6 +24,11 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
   app.get("/migrateAll", async (req, res) => {
     try {
       logger.debug("Started Migration");
+      const { savedConferences, savedDivisions } =
+        await migrateConferenceAndDivisions();
+      logger.debug("Saved Conferences and Divisions");
+      const savedPositions = await migratePositions();
+      logger.debug("Saved Positions");
       const savedTeams = await migrateTeams();
       logger.debug("Saved Teams");
       const teamGames = await migrateGames();
@@ -33,12 +40,47 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
       const depths = await migrateDepths(logger);
       logger.debug("Saved Depths");
       res.status(200).json({
+        savedConferences,
+        savedDivisions,
+        savedPositions,
         savedTeams,
         teamGames,
         teamAthletes,
         freeAgentAthletes,
         depths,
       });
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json(err);
+    }
+  });
+
+  //Migrates All Conferences And Divisions
+  app.get("/migrateConferenceAndDivisions", async (req, res) => {
+    try {
+      const {
+        savedConferences,
+        savedDivisions,
+        savedDivisionToTeamConnections,
+      } = await migrateConferenceAndDivisions();
+      res
+        .status(200)
+        .json({
+          savedConferences,
+          savedDivisions,
+          savedDivisionToTeamConnections,
+        });
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json(err);
+    }
+  });
+
+  //Migrates All Positions
+  app.get("/migratePositions", async (req, res) => {
+    try {
+      const savedPositions = await migratePositions();
+      res.status(200).json({ savedPositions });
     } catch (err) {
       logger.error(err);
       res.status(500).json(err);

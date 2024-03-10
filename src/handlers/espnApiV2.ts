@@ -2,6 +2,7 @@ import { listLeagues, listLeaguesWithAthleteEspnIds } from "../models/leagues";
 import { espnRequestBuilder } from "../services/espnApiV2/requestBuilder";
 import { espnResponseHandler } from "../services/espnApiV2/responseHandler";
 import {
+  connectDivisionToTeam,
   listTeams,
   listTeamsWithLeagueSportSlugAndId,
   upsertTeam,
@@ -18,6 +19,195 @@ import { upsertDepths } from "../models/depths";
 import { Logger } from "winston";
 import { prisma } from "..";
 import { ListAllNflGamesResponse } from "../types/games";
+import { upsertConferences } from "../models/conferences";
+import { upsertDivisions } from "../models/divisions";
+
+export const migrateConferenceAndDivisions = async () => {
+  // Get Leagues
+  const leagueData = await listLeagues();
+
+  // Getting List of Position Urls
+  const conferenceAndDivisionUrlsResponse: {
+    conferenceUrls: EspnApiV2.ResponseCoreList.Item[];
+    divisionalConference: {
+      urls: EspnApiV2.ResponseCoreList.Item[];
+      conferenceId: string;
+    }[];
+    league: {
+      id: string;
+      sport: string;
+      slug: string;
+    };
+  }[] = await Promise.all(
+    leagueData.map(async (ld) => {
+      const { sport, slug } = ld;
+      const conferenceUrls =
+        await espnRequestBuilder.buildConferencesUrlListRequest(sport, slug);
+
+      const divisionalConference = await Promise.all(
+        conferenceUrls.map(async (ci) => {
+          const confSplit = ci.$ref.split("/");
+          const conference = confSplit[confSplit.length - 1].split("?")[0];
+          const urls = await espnRequestBuilder.buildDivisionsUrlListRequest(
+            sport,
+            slug,
+            conference
+          );
+          return { urls, conferenceId: conference };
+        })
+      );
+      return {
+        conferenceUrls,
+        divisionalConference,
+        league: { id: ld.id, slug, sport },
+      };
+    })
+  );
+
+  // Getting League Groups For Each Conference and Division
+  const leagueGroupsResponse: {
+    conferences: EspnApiV2.GroupResponse[];
+    divisions: {
+      resp: {
+        division: EspnApiV2.ResponseGroup.Group;
+        divisionTeams: {
+          divisionId: string;
+          leagueId: string;
+          teamId: string;
+        }[];
+      }[];
+      conferenceId: string;
+    }[];
+    leagueId: string;
+  }[] = await Promise.all(
+    conferenceAndDivisionUrlsResponse.map(async (cdUrls) => {
+      const conferences = await Promise.all(
+        cdUrls.conferenceUrls.map(async (i) => {
+          const conference =
+            await espnRequestBuilder.buildLeagueConferenceAndDivisionRequest(
+              i.$ref
+            );
+          return conference;
+        })
+      );
+
+      const divisions = await Promise.all(
+        cdUrls.divisionalConference.map(async (dc) => {
+          const resp = await Promise.all(
+            dc.urls.map(async (i) => {
+              const division =
+                await espnRequestBuilder.buildLeagueConferenceAndDivisionRequest(
+                  i.$ref
+                );
+
+              const teamsToConnectToDivision =
+                await espnRequestBuilder.buildDivisionTeamsUrlListRequest(
+                  cdUrls.league.sport,
+                  cdUrls.league.slug,
+                  division.id
+                );
+
+              const divisionTeams =
+                espnResponseHandler.handleTeamToConnectToDivisionsResponse(
+                  teamsToConnectToDivision,
+                  division.id,
+                  cdUrls.league.id
+                );
+
+              return { division, divisionTeams };
+            })
+          );
+          return { resp, conferenceId: dc.conferenceId };
+        })
+      );
+      return { conferences, divisions, leagueId: cdUrls.league.id };
+    })
+  );
+
+  // Handle Espn Groups
+  const { conferences, divisions, teamDivisions } =
+    espnResponseHandler.handleGroupsResponse(leagueGroupsResponse);
+
+  // Save Conferences
+  const savedConferences = await Promise.all(
+    conferences.map(async (c) => {
+      return await upsertConferences(c);
+    })
+  );
+
+  // Save Divisions
+  const savedDivisions = await Promise.all(
+    divisions.map(async (d) => {
+      return await upsertDivisions(d);
+    })
+  );
+
+  // Connect Divisions to Teams
+  const savedDivisionToTeamConnections = await Promise.all(
+    teamDivisions.map(async (s) => {
+      return await connectDivisionToTeam(s);
+    })
+  );
+
+  return { savedConferences, savedDivisions, savedDivisionToTeamConnections };
+};
+
+export const migratePositions = async () => {
+  // Get Leagues
+  const leagueData = await listLeagues();
+
+  // Getting List of Position Urls
+  const positionsUrlsResponse: {
+    positionUrls: EspnApiV2.CoreListResponse;
+    leagueId: string;
+  }[] = await Promise.all(
+    leagueData.map(async (ld) => {
+      const { sport, slug } = ld;
+      const positionUrls =
+        await espnRequestBuilder.buildPositionsUrlListRequest(sport, slug);
+      return { positionUrls, leagueId: ld.id };
+    })
+  );
+
+  // Getting League Positions
+  const leaguePositionsResponse: {
+    positions: EspnApiV2.PositionResponse[];
+    leagueId: string;
+  }[] = await Promise.all(
+    positionsUrlsResponse.map(async (pUrls) => {
+      const positions = await Promise.all(
+        pUrls.positionUrls.items.map(async (i) => {
+          const position = await espnRequestBuilder.buildLeaguePositionRequest(
+            i.$ref
+          );
+          return position;
+        })
+      );
+
+      return { positions, leagueId: pUrls.leagueId };
+    })
+  );
+
+  // Handle Espn Teams
+  const positionResponses = espnResponseHandler.handlePositionsResponse(
+    leaguePositionsResponse
+  );
+
+  // Save Positions without Parent
+  const firstRound = await Promise.all(
+    positionResponses.map(async (s) => {
+      return await upsertPositions(s, true);
+    })
+  );
+  // Connect Parent Positions
+  const secondRound = await Promise.all(
+    positionResponses.map(async (s) => {
+      return await upsertPositions(s, false);
+    })
+  );
+
+  return { firstRound, secondRound };
+};
 
 export const migrateTeams = async () => {
   // Get Leagues
@@ -100,15 +290,9 @@ export const migrateTeamAthletes = async () => {
     })
   );
   // Handling Team Roster
-  const { teamAthletes, parentPositions, savedTeamRosters } =
+  const { teamAthletes, savedTeamRosters } =
     await espnResponseHandler.handleTeamRosterResponse(rosterResponse);
 
-  // Saving Parent Positions
-  const savedParentPositions = await Promise.all(
-    parentPositions.map(async (s) => {
-      return await upsertPositions(s);
-    })
-  );
   // Saving Team Athletes
   const savedAthletes = await Promise.all(
     teamAthletes.map(async (s) => {
@@ -116,7 +300,7 @@ export const migrateTeamAthletes = async () => {
     })
   );
 
-  return { savedParentPositions, savedAthletes, savedTeamRosters };
+  return { savedAthletes, savedTeamRosters };
 };
 
 export const migrateDepths = async (logger: Logger) => {
@@ -190,15 +374,10 @@ export const migrateFreeAgentAthletes = async () => {
   );
 
   // Get Free Agent Athletes
-  const { positions, athletes } =
-    espnResponseHandler.handleLeagueAthleteResponse(leagueAthleteResponse);
-
-  // Saving Positions
-  const savedPositions = await Promise.all(
-    positions.map(async (s) => {
-      return await upsertPositions(s);
-    })
+  const { athletes } = espnResponseHandler.handleLeagueAthleteResponse(
+    leagueAthleteResponse
   );
+
   // Saving Team Athletes
   const savedAthletes = await Promise.all(
     athletes.map(async (s) => {
@@ -206,7 +385,7 @@ export const migrateFreeAgentAthletes = async () => {
     })
   );
 
-  return { savedAthletes, savedPositions };
+  return { savedAthletes };
 };
 
 export const migrateGameStatistics = async (

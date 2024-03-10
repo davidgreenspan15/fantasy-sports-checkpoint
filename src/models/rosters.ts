@@ -33,11 +33,20 @@ export const listTeamRoster = async (
         weight: true,
         dateOfBirth: true,
         Position: {
-          select: {
-            displayName: true,
-            name: true,
-            abbreviation: true,
-            parentPositionId: true,
+          include: {
+            Parent: {
+              include: {
+                Parent: {
+                  include: {
+                    Parent: {
+                      include: {
+                        Parent: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -84,7 +93,7 @@ export const findTeamRoster = async (game: {
         Position: {
           select: {
             displayName: true,
-            parentPositionId: true,
+            parentId: true,
           },
         },
       },

@@ -12,6 +12,29 @@ export const upsertTeam = async (team: Prisma.TeamCreateInput) => {
   });
 };
 
+export const connectDivisionToTeam = async ({
+  divisionId,
+  leagueId,
+  teamId,
+}: {
+  divisionId: string;
+  leagueId: string;
+  teamId: string;
+}) => {
+  return await prisma.team.update({
+    where: {
+      espnId_leagueId: { espnId: teamId, leagueId: leagueId },
+    },
+    data: {
+      Division: {
+        connect: {
+          espnId_leagueId: { espnId: divisionId, leagueId: leagueId },
+        },
+      },
+    },
+  });
+};
+
 export const listTeamsWithLeagueSportSlugAndId = async () => {
   return await prisma.team.findMany({
     select: {

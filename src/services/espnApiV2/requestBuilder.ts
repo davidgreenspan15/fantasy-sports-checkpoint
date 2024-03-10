@@ -14,6 +14,69 @@ export const isEspnApiRequestError = (err: any): err is EspnError => {
 };
 
 export const espnRequestBuilder = {
+  buildConferencesUrlListRequest: async (sport: string, slug: string) => {
+    const year = new Date().getFullYear();
+    const url = `${coreBaseUrl}/${sport}/leagues/${slug}/seasons/${year}/types/2/groups`;
+    try {
+      const response = await axios.get<EspnApiV2.CoreListResponse>(url);
+      return response.data.items;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
+  buildDivisionsUrlListRequest: async (
+    sport: string,
+    slug: string,
+    conference: string
+  ) => {
+    const year = new Date().getFullYear();
+    const url = `${coreBaseUrl}/${sport}/leagues/${slug}/seasons/${year}/types/2/groups/${conference}/children`;
+    try {
+      const response = await axios.get<EspnApiV2.CoreListResponse>(url);
+      return response.data.items;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
+  buildDivisionTeamsUrlListRequest: async (
+    sport: string,
+    slug: string,
+    division: string
+  ) => {
+    const year = new Date().getFullYear();
+    const url = `${coreBaseUrl}/${sport}/leagues/${slug}/seasons/${year}/types/2/groups/${division}/teams`;
+    try {
+      const response = await axios.get<EspnApiV2.CoreListResponse>(url);
+      return response.data.items;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
+  buildLeagueConferenceAndDivisionRequest: async (url: string) => {
+    try {
+      const response = await axios.get<EspnApiV2.GroupResponse>(url);
+      return response.data;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
+  buildPositionsUrlListRequest: async (sport: string, slug: string) => {
+    const url = `${coreBaseUrl}/${sport}/leagues/${slug}/positions?limit=1000&`;
+    try {
+      const response = await axios.get<EspnApiV2.CoreListResponse>(url);
+      return response.data;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
+  buildLeaguePositionRequest: async (url: string) => {
+    try {
+      const response = await axios.get<EspnApiV2.PositionResponse>(url);
+      return response.data;
+    } catch (err) {
+      throw { ...err, espnApiRequestError: true } as EspnError;
+    }
+  },
   buildSportsTeamsListRequest: async (sport: string, slug: string) => {
     const url = `${baseUrl}/${sport}/${slug}/teams`;
     try {

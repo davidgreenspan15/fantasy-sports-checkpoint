@@ -62,7 +62,7 @@ export const listTeamAthletes = async (teamId?: string) => {
     Position: {
       select: {
         displayName: true,
-        parentPositionId: true,
+        parentId: true,
       },
     },
   };
@@ -95,7 +95,7 @@ export const getAthleteById = async (id) => {
       Position: {
         select: {
           displayName: true,
-          parentPositionId: true,
+          parentId: true,
         },
       },
     },
@@ -119,7 +119,7 @@ export const getAthletesById = async (ids: string[]) => {
       Position: {
         select: {
           displayName: true,
-          parentPositionId: true,
+          parentId: true,
         },
       },
     },

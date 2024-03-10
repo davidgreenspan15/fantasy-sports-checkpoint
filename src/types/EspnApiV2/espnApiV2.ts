@@ -1,6 +1,12 @@
 export namespace EspnApiV2 {
   export type TeamListResponse = ResponseTeamList.SportTeam;
 
+  export type GroupResponse = ResponseGroup.Group;
+
+  export type CoreListResponse = ResponseCoreList.CoreList;
+
+  export type PositionResponse = ResponsePosition.Position;
+
   export type TeamScheduleResponse = ResponseTeamSchedule.Schedule;
 
   export type TeamRosterResponse = ResponseTeamRoster.Roster;
@@ -16,6 +22,56 @@ export namespace EspnApiV2 {
 
   export type LeagueYearlyScheduleResponse =
     ResponseLeagueYearlySchedule.LeagueYearlySchedule;
+
+  export namespace ResponseGroup {
+    export interface Group {
+      $ref: string;
+      uid: string;
+      id: string;
+      name: string;
+      abbreviation: string;
+      season: Children;
+      children: Children;
+      parent: Children;
+      standings: Children;
+      isConference: boolean;
+      slug: string;
+      teams: Children;
+    }
+
+    export interface Children {
+      $ref: string;
+    }
+  }
+
+  export namespace ResponseCoreList {
+    export interface CoreList {
+      count: number;
+      pageIndex: number;
+      pageSize: number;
+      pageCount: number;
+      items: Item[];
+    }
+
+    export interface Item {
+      $ref: string;
+    }
+  }
+
+  export namespace ResponsePosition {
+    export interface Position {
+      $ref: string;
+      id: string;
+      name: string;
+      displayName: string;
+      abbreviation: string;
+      leaf: boolean;
+      parent?: Parent;
+    }
+    export interface Parent {
+      $ref: string;
+    }
+  }
   export namespace ResponseTeamList {
     export interface SportTeam {
       sports: Sport[];

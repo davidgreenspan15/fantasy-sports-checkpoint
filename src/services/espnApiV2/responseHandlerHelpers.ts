@@ -116,6 +116,36 @@ import {
   upsertTeamPitchingStatistic,
 } from "../../models/pitchingStatistics";
 
+export const createConference: (
+  conference: EspnApiV2.GroupResponse,
+  leagueId: string
+) => Prisma.ConferenceCreateInput = (conference, leagueId) => {
+  return {
+    espnId: conference.id,
+    name: conference.name,
+    abbreviation: conference.abbreviation,
+    League: { connect: { id: leagueId } },
+  };
+};
+
+export const createDivision: (
+  division: EspnApiV2.GroupResponse,
+  leagueId: string,
+  conferenceId: string
+) => Prisma.DivisionCreateInput = (division, leagueId, conferenceId) => {
+  return {
+    espnId: division.id,
+    name: division.name,
+    abbreviation: division.abbreviation,
+    Conference: {
+      connect: {
+        espnId_leagueId: { espnId: conferenceId, leagueId: leagueId },
+      },
+    },
+    League: { connect: { id: leagueId } },
+  };
+};
+
 export const createTeam: (
   team: EspnApiV2.ResponseTeamList.TeamTeam,
   leagueId: string
@@ -197,17 +227,10 @@ export const createTeamAthlete: (
   teamRosterId: string
 ) => {
   teamAthlete: Prisma.AthleteCreateInput;
-  positions: Prisma.PositionCreateInput[];
 } = (athlete, teamId, leagueId, teamRosterId) => {
-  const positions: Prisma.PositionCreateInput[] = [];
-  const parent = athlete.position.parent;
   const teamAthlete = createAthlete(athlete, teamId, leagueId, teamRosterId);
-  positions.push(createPosition(athlete.position, leagueId));
-  if (parent) {
-    positions.push(createPosition(parent, leagueId));
-  }
 
-  return { teamAthlete, positions };
+  return { teamAthlete };
 };
 
 const createAthlete: (
@@ -272,29 +295,37 @@ export const createLeagueAthlete: (
   leagueId: string
 ) => {
   leagueAthlete: Prisma.AthleteCreateInput;
-  position: Prisma.PositionCreateInput;
 } = (athlete, leagueId) => {
   const teamId = athlete.team?.$ref?.split("/")?.pop()?.split("?")[0];
   const leagueAthlete = createAthlete(athlete, teamId, leagueId);
-  const position = createPosition(athlete.position, leagueId);
 
-  return { leagueAthlete, position };
+  return { leagueAthlete };
 };
 
-const createPosition: (
-  espnPosition:
-    | EspnApiV2.ResponseTeamRoster.Position
-    | EspnApiV2.ResponseLeagueAthlete.Position,
+export const createPosition: (
+  espnPosition: EspnApiV2.PositionResponse,
   leagueId: string
 ) => Prisma.PositionCreateInput = (espnPosition, leagueId) => {
-  return {
-    espnId: espnPosition.id,
+  const position: Prisma.PositionCreateInput = {
     name: espnPosition.name,
+    espnId: espnPosition.id,
     displayName: espnPosition.displayName,
     abbreviation: espnPosition.abbreviation,
-    parentPositionId: espnPosition["parent"]?.["id"],
     League: { connect: { id: leagueId } },
   };
+  if (espnPosition.parent?.$ref) {
+    const splitRef = espnPosition.parent.$ref.split("/");
+    const parentId = splitRef?.[splitRef.length - 1]?.split("?")?.[0];
+    if (parentId) {
+      position["Parent"] = {
+        connect: {
+          espnId_leagueId: { espnId: parentId, leagueId: leagueId },
+        },
+      };
+    }
+  }
+
+  return position;
 };
 
 export const createDepth: (
@@ -316,25 +347,17 @@ export const createDepth: (
         League: { connect: { id: leagueId } },
         depth: a.rank,
         Positions: {
-          connectOrCreate: [
-            {
-              where: { id: position.id },
-              create: {
-                espnId: position.id,
-                name: position.name,
-                displayName: position.displayName,
-                abbreviation: position.abbreviation,
-                League: { connect: { id: leagueId } },
-              },
+          connect: {
+            espnId_leagueId: {
+              espnId: position.id,
+              leagueId: leagueId,
             },
-          ],
+          },
         },
         Athletes: {
-          connect: [
-            {
-              id: athleteEspnId,
-            },
-          ],
+          connect: {
+            espnId_leagueId: { espnId: athleteEspnId, leagueId: leagueId },
+          },
         },
       };
       depths.push(depth);
