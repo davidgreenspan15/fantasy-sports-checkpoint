@@ -55,26 +55,28 @@ export const listLeaguesWithTeams = async () => {
           displayName: true,
           location: true,
           imageUrl: true,
-        },
-      },
-      Games: {
-        select: {
-          Season: {
+          color: true,
+          alternateColor: true,
+          Games: {
             select: {
-              displayYear: true,
-              type: true,
-              name: true,
+              Season: {
+                select: {
+                  displayYear: true,
+                  type: true,
+                  name: true,
+                },
+              },
             },
           },
-        },
-      },
-      Roster: {
-        select: {
-          Season: {
+          Roster: {
             select: {
-              displayYear: true,
-              type: true,
-              name: true,
+              Season: {
+                select: {
+                  displayYear: true,
+                  type: true,
+                  name: true,
+                },
+              },
             },
           },
         },

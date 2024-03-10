@@ -29,9 +29,14 @@ export const listTeamRoster = async (
         displayName: true,
         imageUrl: true,
         number: true,
+        height: true,
+        weight: true,
+        dateOfBirth: true,
         Position: {
           select: {
             displayName: true,
+            name: true,
+            abbreviation: true,
             parentPositionId: true,
           },
         },

@@ -11,6 +11,10 @@ import { PrismaClient } from "@prisma/client";
 
 export const prisma = new PrismaClient({
   log: [
+    // {
+    //   level: "query",
+    //   emit: "event", // Emit events for query logs
+    // },
     // "query",
     // "info",
     // "warn",
@@ -18,6 +22,10 @@ export const prisma = new PrismaClient({
   ],
 });
 
+// prisma.$on("query", (e) => {
+//   // console.log(`Query: ${e.query}`);
+//   console.log(`Duration: ${e.duration}ms`); // Log the duration of each query
+// });
 const app = express();
 const PORT = process.env.PORT || 8000;
 app.use(function (req, res, next) {

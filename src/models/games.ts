@@ -44,7 +44,10 @@ export const listAllNflGames = async (
 ) => {
   const whereClause = {
     League: {
-      OR: [{ slug: "nba" }, { slug: "nfl" }, { slug: "nhl" }],
+      OR: [
+        // { slug: "nba" }, { slug: "nfl" }, { slug: "nhl" },
+        { slug: "mlb" },
+      ],
     },
   };
   if (gameIds.length > 0) {
@@ -114,6 +117,12 @@ export const listTeamGames = async (
     period: true,
     Statistics: {
       select: {
+        TeamGameStatistics: {
+          select: {
+            teamId: true,
+            teamScore: true,
+          },
+        },
         isComplete: true,
       },
     },

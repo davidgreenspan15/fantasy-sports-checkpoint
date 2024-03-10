@@ -99,7 +99,7 @@ export const espnApiV2Routes = (app: Express, logger: Logger) => {
   app.get("/migrateGameStatistics", async (req, res) => {
     try {
       const gameIds = req.body.gameIds ?? [];
-      const gameStatistics = await migrateGameStatistics(gameIds, true, false);
+      const gameStatistics = await migrateGameStatistics(gameIds, true, true);
       res.status(200).json({ gameStatistics });
     } catch (err) {
       logger.error(err);

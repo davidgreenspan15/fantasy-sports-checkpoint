@@ -1,7 +1,12 @@
 import { Express } from "express";
 import { Logger } from "winston";
 
-import { getDraftBoard, resetData, todaysBirthday } from "../handlers/common";
+import {
+  getDraftBoard,
+  getLeaguesWithTeams,
+  resetData,
+  todaysBirthday,
+} from "../handlers/common";
 import { prisma } from "..";
 import { getAthletesById, listTeamAthletes } from "../models/athletes";
 import { listParentPositions } from "../models/positions";
@@ -108,7 +113,7 @@ export const commonRoutes = (app: Express, logger: Logger) => {
   });
   app.get("/getLeaguesWithTeams", async (req, res) => {
     try {
-      const resp = await listLeaguesWithTeams();
+      const resp = await getLeaguesWithTeams();
       res.status(200).json(resp);
     } catch (err) {
       logger.error(err);
@@ -145,7 +150,8 @@ export const commonRoutes = (app: Express, logger: Logger) => {
       const teamId = req.body.teamId;
       const displayYear = req.body.displayYear;
       const seasonType = req.body.seasonType;
-      const games = await listTeamGames(displayYear, seasonType, teamId);
+      let games = await listTeamGames(displayYear, seasonType, teamId);
+
       res.status(200).json(games);
     } catch (err) {
       logger.error(err);

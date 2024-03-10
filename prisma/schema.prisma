@@ -254,16 +254,18 @@ model GameStatistic {
 }
 
 model TeamGameStatistic {
-  id              String            @id @default(uuid())
-  GameStatistic   GameStatistic     @relation(fields: [gameStatisticId], references: [id])
-  gameStatisticId String            @map(name: "game_statistic_id")
-  Team            Team              @relation(fields: [teamId], references: [id])
-  teamId          String            @map(name: "team_id")
-  gameId          String            @map(name: "game_id")
-  NflStatistic    NflTeamStatistic?
-  NbaStatistic    NbaTeamStatistic?
-  NhlStatistic    NhlTeamStatistic?
-  teamScore       Int               @default(0) @map(name: "team_score")
+  id              String        @id @default(uuid())
+  GameStatistic   GameStatistic @relation(fields: [gameStatisticId], references: [id])
+  gameStatisticId String        @map(name: "game_statistic_id")
+  Team            Team          @relation(fields: [teamId], references: [id])
+  teamId          String        @map(name: "team_id")
+  gameId          String        @map(name: "game_id")
+  teamScore       Int           @default(0) @map(name: "team_score")
+
+  NflStatistic NflTeamStatistic?
+  NbaStatistic NbaTeamStatistic?
+  NhlStatistic NhlTeamStatistic?
+  MlbStatistic MlbTeamStatistic?
 
   @@unique([gameId, teamId])
   @@unique([gameStatisticId, teamId])
@@ -279,6 +281,7 @@ model AthleteGameStatistic {
   NflStatistic    NflAthleteStatistic?
   NbaStatistic    NbaAthleteStatistic?
   NhlStatistic    NhlAthleteStatistic?
+  MlbStatistic    MlbAthleteStatistic?
 
   createdAt DateTime  @default(now()) @map(name: "created_at")
   updatedAt DateTime? @map(name: "updated_at")
@@ -353,6 +356,24 @@ model NhlAthleteStatistic {
   @@unique([gameId, athleteId])
   @@unique([gameId, teamId])
   @@map(name: "nhl_statistics")
+}
+
+model MlbAthleteStatistic {
+  id                     String                @id @default(uuid())
+  AthleteGameStatistic   AthleteGameStatistic? @relation(fields: [athleteGameStatisticId], references: [id])
+  athleteGameStatisticId String?               @unique @map(name: "athlete_game_statistic_id")
+  MlbTeamStatistic       MlbTeamStatistic?
+  teamId                 String?               @map(name: "team_id")
+  gameId                 String                @map(name: "game_id")
+  athleteId              String?               @map(name: "athlete_id")
+  BattingStatistic       BattingStatistic?     @relation(fields: [battingStatisticId], references: [id])
+  battingStatisticId     String?               @unique @map(name: "batting_statistics_id")
+  PitchingStatistic      PitchingStatistic?    @relation(fields: [pitchingStatisticId], references: [id])
+  pitchingStatisticId    String?               @unique @map(name: "pitching_statistics_id")
+
+  @@unique([gameId, athleteId])
+  @@unique([gameId, teamId])
+  @@map(name: "mlb_statistics")
 }
 
 model NflTeamStatistic {
@@ -459,6 +480,19 @@ model NhlTeamStatistic {
 
   @@unique([gameId, teamId])
   @@map("nhl_team_statistics")
+}
+
+model MlbTeamStatistic {
+  id                       String              @id @default(uuid())
+  TeamGameStatistic        TeamGameStatistic   @relation(fields: [teamGameStatisticId], references: [id])
+  teamGameStatisticId      String              @unique @map(name: "team_game_statistic_id")
+  AthleteTotalStatistics   MlbAthleteStatistic @relation(fields: [athleteTotalStatisticsId], references: [id])
+  athleteTotalStatisticsId String              @unique @map("athlete_total_statistics_id")
+  teamId                   String              @map(name: "team_id")
+  gameId                   String              @map(name: "game_id")
+
+  @@unique([gameId, teamId])
+  @@map("mlb_team_statistics")
 }
 
 model PassingStatistic {
@@ -722,6 +756,53 @@ model GoalieStatistic {
   @@unique([gameId, teamId])
   @@unique([gameId, athleteId])
   @@map("goalie_statistics")
+}
+
+model BattingStatistic {
+  id                  String               @id @default(uuid())
+  atBats              Int                  @map("at_bats")
+  runs                Int
+  hits                Int
+  rbi                 Int
+  homeRuns            Int                  @map("home_runs")
+  walks               Int
+  strikeouts          Int
+  pitchesSeen         Int                  @map("pitches_seen")
+  battingAverage      Float                @map("batting_average")
+  onBasePercentage    Float                @map("on_base_percentage")
+  sluggingPercentage  Float                @map("slugging_percentage")
+  MlbAthleteStatistic MlbAthleteStatistic?
+
+  teamId    String? @map(name: "team_id")
+  athleteId String? @map(name: "athlete_id")
+  gameId    String  @map(name: "game_id")
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("batting_statistics")
+}
+
+model PitchingStatistic {
+  id                  String               @id @default(uuid())
+  inningsPitched      Float                @map("innings_pitched")
+  hitsAllowed         Int                  @map("hits_allowed")
+  runsAllowed         Int                  @map("runs_allowed")
+  earnedRuns          Int                  @map("earned_runs")
+  walks               Int
+  strikeouts          Int
+  homeRunsAllowed     Int                  @map("home_runs_allowed")
+  strikes             Int
+  era                 Float                @map("era")
+  pitchesThrown       Int                  @map("pitches_thrown")
+  MlbAthleteStatistic MlbAthleteStatistic?
+
+  teamId    String? @map(name: "team_id")
+  athleteId String? @map(name: "athlete_id")
+  gameId    String  @map(name: "game_id")
+
+  @@unique([gameId, teamId])
+  @@unique([gameId, athleteId])
+  @@map("pitching_statistics")
 }
 
 model FpsAthlete {

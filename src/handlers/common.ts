@@ -1,5 +1,6 @@
 import { prisma } from "..";
 import { getFPSPlayersForDraft } from "../models/fantasaySportsData";
+import { listLeaguesWithTeams } from "../models/leagues";
 import { listNflScrapedPlayersWithNoFPSData } from "../models/scrapedPlayers";
 import { mergeValues } from "../util/normalizePlayers";
 const twentyFourHoursFrom = +12 * 60 * 60 * 1000;
@@ -133,4 +134,47 @@ export const getDraftBoard = async () => {
   const fpsPlayers = await getFPSPlayersForDraft();
   const playersWithNoFps = await listNflScrapedPlayersWithNoFPSData();
   return mergeValues(playersWithNoFps, fpsPlayers);
+};
+
+export const getLeaguesWithTeams = async () => {
+  const lT = await listLeaguesWithTeams();
+
+  // create unique list of Season displayYear and Type for each team
+  const mappedLt = lT.map((l) => {
+    l.Teams.map((t) => {
+      const GameSeason = { displayYears: [], types: [] };
+      const gameDisplayYearHash = {};
+      const gameTypeHash = {};
+      t.Games.forEach((g) => {
+        gameDisplayYearHash[g.Season.displayYear] = g.Season.displayYear;
+        gameTypeHash[g.Season.type] = {
+          name: g.Season.name,
+          type: g.Season.type,
+        };
+      });
+      GameSeason.displayYears = Object.keys(gameDisplayYearHash);
+      GameSeason.types = Object.values(gameTypeHash);
+
+      const RosterSeason = { displayYears: [], types: [] };
+      const rosterDisplayYearHash = {};
+      const rosterTypeHash = {};
+      t.Roster.forEach((r) => {
+        rosterDisplayYearHash[r.Season.displayYear] = r.Season.displayYear;
+        rosterTypeHash[r.Season.type] = {
+          name: r.Season.name,
+          type: r.Season.type,
+        };
+      });
+      RosterSeason.displayYears = Object.keys(rosterDisplayYearHash);
+      RosterSeason.types = Object.values(rosterTypeHash);
+      t["GameSeason"] = GameSeason;
+      t["RosterSeason"] = RosterSeason;
+      delete t.Roster;
+      delete t.Games;
+
+      return t;
+    });
+    return l;
+  });
+  return mappedLt;
 };

@@ -24,6 +24,10 @@ import {
   SkaterStatistic,
   GoalieStatistic,
   Team,
+  MlbTeamStatistic,
+  MlbAthleteStatistic,
+  BattingStatistic,
+  PitchingStatistic,
 } from "@prisma/client";
 
 import { upsertAthleteGameStatistics } from "../../models/athleteGameStatistics";
@@ -97,7 +101,20 @@ import {
 import {
   upsertAthleteGoalieStatistic,
   upsertTeamGoalieStatistic,
-} from "../../models/goalieStatistics copy";
+} from "../../models/goalieStatistics";
+import { upsertMlbTeamStatistics } from "../../models/mlbTeamStatistics";
+import {
+  upsertAthleteBattingStatistic,
+  upsertTeamBattingStatistic,
+} from "../../models/battingStatistics";
+import {
+  upsertMlbAthleteStatisticStatistics,
+  upsertMlbAthleteTotalStatisticStatistics,
+} from "../../models/mlbAthleteStatistics";
+import {
+  upsertAthletePitchingStatistic,
+  upsertTeamPitchingStatistic,
+} from "../../models/pitchingStatistics";
 
 export const createTeam: (
   team: EspnApiV2.ResponseTeamList.TeamTeam,
@@ -534,6 +551,19 @@ export const createTeamGameStatistics: (
             savedTeamGameStatistic.id
           );
 
+          break;
+
+        case "mlb":
+          await createMlbTeamStatistics(
+            t.statistics,
+            playerStatistics,
+            team.id,
+            game.id,
+            savedTeamGameStatistic.id
+          );
+
+          break;
+
         default:
           break;
       }
@@ -556,6 +586,7 @@ export const createAthleteGameStatistics: (
   athletes
 ) => {
   const athleteHash = boxscore.players?.reduce((acc, p) => {
+    const isMlbGame = game.League.slug === "mlb";
     const team = game.Teams.find((gt) => gt.espnId === p.team.id);
     p.statistics.forEach((s) => {
       return s.athletes.forEach((a) => {
@@ -563,7 +594,7 @@ export const createAthleteGameStatistics: (
         if (athlete) {
           if (acc[a.athlete.guid]) {
             acc[a.athlete.guid].statistics.push({
-              name: s.name,
+              name: isMlbGame ? s.type : s.name,
               stats: a.stats,
             });
           } else {
@@ -571,7 +602,9 @@ export const createAthleteGameStatistics: (
               athleteId: athlete.id,
               gameId: game.id,
               teamId: team.id,
-              statistics: [{ name: s.name, stats: a.stats }],
+              statistics: [
+                { name: isMlbGame ? s.type : s.name, stats: a.stats },
+              ],
             };
           }
         }
@@ -624,6 +657,20 @@ export const createAthleteGameStatistics: (
           athleteGameStatistics["NhlStatistic"] = {
             connect: {
               id: nhlAthleteStatistics?.id ?? "",
+            },
+          };
+          break;
+
+        case "mlb":
+          const mlbAthleteStatistics = await createMlbAthleteStatistics(
+            athlete.statistics,
+            game.id,
+            athlete.athleteId,
+            null
+          );
+          athleteGameStatistics["MlbStatistic"] = {
+            connect: {
+              id: mlbAthleteStatistics?.id ?? "",
             },
           };
           break;
@@ -1119,6 +1166,37 @@ const createNhlTeamStatistics: (
   return await upsertNhlTeamStatistics(teamId, gameId, nhlTeamStatistic);
 };
 
+const createMlbTeamStatistics: (
+  teamStatistics: EspnApiV2.ResponseGameSummary.TeamStatistic[],
+  playerStatistics: EspnApiV2.ResponseGameSummary.PlayerStatistic[],
+  teamId: string,
+  gameId: string,
+  savedTeamGameStatisticId: string
+) => Promise<MlbTeamStatistic> = async (
+  teamStatistics,
+  playerStatistics,
+  teamId,
+  gameId,
+  savedTeamGameStatisticId
+) => {
+  const athleteTotalStatistics = await createMlbAthleteStatistics(
+    playerStatistics?.map((p) => {
+      return { name: p.type, stats: p.totals ?? [] };
+    }),
+    gameId,
+    null,
+    teamId
+  );
+  const mlbTeamStatistic: Prisma.MlbTeamStatisticCreateInput = {
+    AthleteTotalStatistics: { connect: { id: athleteTotalStatistics.id } },
+    TeamGameStatistic: { connect: { id: savedTeamGameStatisticId } },
+    teamId: teamId,
+    gameId: gameId,
+  };
+
+  return await upsertMlbTeamStatistics(teamId, gameId, mlbTeamStatistic);
+};
+
 const createNbaAthleteStatistics: (
   athleteStats: { name: string; stats: string[] }[],
   gameId: string,
@@ -1220,6 +1298,66 @@ const createNhlAthleteStatistics: (
   if (athleteId) {
     athleteStatistics["athleteId"] = athleteId;
     const savedAthleteStatistics = await upsertNhlAthleteStatisticStatistics(
+      athleteId,
+      gameId,
+      athleteStatistics
+    );
+
+    return savedAthleteStatistics;
+  }
+};
+
+const createMlbAthleteStatistics: (
+  athleteStats: { name: string; stats: string[] }[],
+  gameId: string,
+  athleteId?: string,
+  teamId?: string
+) => Promise<MlbAthleteStatistic> = async (
+  athleteStats,
+  gameId,
+  athleteId,
+  teamId
+) => {
+  const battingStatistic = await createBattingStatistics(
+    athleteStats?.find((s) => s.name === "batting")?.stats,
+    gameId,
+    teamId,
+    athleteId
+  );
+
+  const pitchingStatistic = await createPitchingStatistics(
+    athleteStats?.find((s) => s.name === "pitching")?.stats,
+    gameId,
+    teamId,
+    athleteId
+  );
+  const athleteStatistics: Prisma.NhlAthleteStatisticCreateInput = {
+    gameId: gameId,
+  };
+  if (battingStatistic) {
+    athleteStatistics["BattingStatistic"] = {
+      connect: { id: battingStatistic.id },
+    };
+  }
+  if (pitchingStatistic) {
+    athleteStatistics["PitchingStatistic"] = {
+      connect: { id: pitchingStatistic.id },
+    };
+  }
+
+  if (teamId) {
+    athleteStatistics["teamId"] = teamId;
+    const savedAthleteStatistics =
+      await upsertMlbAthleteTotalStatisticStatistics(
+        teamId,
+        gameId,
+        athleteStatistics
+      );
+    return savedAthleteStatistics;
+  }
+  if (athleteId) {
+    athleteStatistics["athleteId"] = athleteId;
+    const savedAthleteStatistics = await upsertMlbAthleteStatisticStatistics(
       athleteId,
       gameId,
       athleteStatistics
@@ -1676,6 +1814,77 @@ const createGoalieStatistics: (
   }
 };
 
+const createBattingStatistics: (
+  playerStatistic: string[],
+  gameId: string,
+  teamId?: string,
+  athleteId?: string
+) => Promise<BattingStatistic> = async (
+  playerStatistic,
+  gameId,
+  teamId,
+  athleteId
+) => {
+  if (!playerStatistic) return null;
+  const statistic: Prisma.BattingStatisticCreateInput = {
+    atBats: stringToNumberOrZero(playerStatistic[1]),
+    runs: stringToNumberOrZero(playerStatistic[2]),
+    hits: stringToNumberOrZero(playerStatistic[3]),
+    rbi: stringToNumberOrZero(playerStatistic[4]),
+    homeRuns: stringToNumberOrZero(playerStatistic[5]),
+    walks: stringToNumberOrZero(playerStatistic[6]),
+    strikeouts: stringToNumberOrZero(playerStatistic[7]),
+    pitchesSeen: stringToNumberOrZero(playerStatistic[8]),
+    battingAverage: stringToNumberOrZero(playerStatistic[9]) ?? 0.0,
+    onBasePercentage: stringToNumberOrZero(playerStatistic[10]) ?? 0.0,
+    sluggingPercentage: stringToNumberOrZero(playerStatistic[11]) ?? 0.0,
+
+    gameId: gameId,
+  };
+  if (teamId) {
+    statistic["teamId"] = teamId;
+    return await upsertTeamBattingStatistic(teamId, gameId, statistic);
+  } else if (athleteId) {
+    statistic["athleteId"] = athleteId;
+    return await upsertAthleteBattingStatistic(athleteId, gameId, statistic);
+  }
+};
+
+const createPitchingStatistics: (
+  playerStatistic: string[],
+  gameId: string,
+  teamId?: string,
+  athleteId?: string
+) => Promise<PitchingStatistic> = async (
+  playerStatistic,
+  gameId,
+  teamId,
+  athleteId
+) => {
+  if (!playerStatistic) return null;
+  const statistic: Prisma.PitchingStatisticCreateInput = {
+    inningsPitched: stringToNumberOrZero(playerStatistic[0]),
+    hitsAllowed: stringToNumberOrZero(playerStatistic[1]),
+    runsAllowed: stringToNumberOrZero(playerStatistic[2]),
+    earnedRuns: stringToNumberOrZero(playerStatistic[3]),
+    walks: stringToNumberOrZero(playerStatistic[4]),
+    strikeouts: stringToNumberOrZero(playerStatistic[5]),
+    homeRunsAllowed: stringToNumberOrZero(playerStatistic[6]),
+    strikes: stringToNumberOrZero(playerStatistic[7]?.split("-")?.[1]),
+    era: stringToNumberOrZero(playerStatistic[8]) ?? 0.0,
+    pitchesThrown: stringToNumberOrZero(playerStatistic[9]),
+
+    gameId: gameId,
+  };
+  if (teamId) {
+    statistic["teamId"] = teamId;
+    return await upsertTeamPitchingStatistic(teamId, gameId, statistic);
+  } else if (athleteId) {
+    statistic["athleteId"] = athleteId;
+    return await upsertAthletePitchingStatistic(athleteId, gameId, statistic);
+  }
+};
+
 const stringToNumberOrZero: (string: string) => number | null = (string) => {
   const value = parseFloat(string);
   if (!isNaN(value)) {
@@ -1714,4 +1923,25 @@ export const subtractFromTwentyMinutes = (time?: string): string => {
     .toString()
     .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
   return formattedRemainingTime;
+};
+
+export const isGameComplete = (
+  plays: EspnApiV2.ResponseGameSummary.Play[],
+  slug: string
+) => {
+  let lastPlay = plays[plays.length - 1];
+  if (slug === "mlb") {
+    if (
+      lastPlay?.period.type === "End" &&
+      lastPlay?.period.number >= 9 &&
+      lastPlay?.awayScore !== lastPlay?.homeScore
+    ) {
+      return true;
+    }
+  }
+  return (
+    lastPlay?.text === "End of Game" ||
+    lastPlay?.text === "Game End" ||
+    lastPlay?.text === "END GAME"
+  );
 };

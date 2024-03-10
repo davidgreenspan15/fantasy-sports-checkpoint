@@ -75,6 +75,16 @@ export const getGameStatistic = async (gameId: string) => {
               },
             },
           },
+          MlbStatistic: {
+            include: {
+              AthleteTotalStatistics: {
+                select: {
+                  BattingStatistic: true,
+                  PitchingStatistic: true,
+                },
+              },
+            },
+          },
         },
       },
       AthleteGameStatistics: {
@@ -117,6 +127,12 @@ export const getGameStatistic = async (gameId: string) => {
             select: {
               SkaterStatistic: true,
               GoalieStatistic: true,
+            },
+          },
+          MlbStatistic: {
+            select: {
+              BattingStatistic: true,
+              PitchingStatistic: true,
             },
           },
         },

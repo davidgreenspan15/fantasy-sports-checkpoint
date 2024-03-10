@@ -11,6 +11,7 @@ import {
   createTeam,
   createTeamAthlete,
   createTeamGameStatistics,
+  isGameComplete,
   mapIdenticalGames,
   mapIdenticalYearlyGames,
   subtractFromTwentyMinutes,
@@ -219,11 +220,13 @@ export const espnResponseHandler = {
 
         if (plays?.length > 0) {
           const lastPlay = plays[plays.length - 1];
-          const isComplete =
-            lastPlay?.text === "End of Game" ||
-            lastPlay?.text === "Game End" ||
-            lastPlay?.text === "END GAME";
-          let timeOnClock = lastPlay?.clock.displayValue;
+          const isComplete = isGameComplete(plays, gsr.game.League.slug);
+
+          let timeOnClock = lastPlay?.clock?.displayValue;
+
+          if (gsr.game.League.slug === "mlb") {
+            timeOnClock = lastPlay.period.type;
+          }
           if (gsr.game.League.slug === "nhl") {
             timeOnClock = subtractFromTwentyMinutes(timeOnClock);
           }

@@ -1100,6 +1100,7 @@ export namespace EspnApiV2 {
     }
 
     export interface PlayerStatistic {
+      type?: string;
       name: string;
       keys: string[];
       text: string;
@@ -1241,6 +1242,7 @@ export namespace EspnApiV2 {
     }
 
     export interface PlayPeriod {
+      type: string;
       number: number;
     }
 
