@@ -1,4 +1,4 @@
-import { omit } from "lodash";
+import { find, omit } from "lodash";
 import { prisma } from "..";
 import { getGameStatistic } from "../models/GameStatistics";
 import { getFPSPlayersForDraft } from "../models/fantasaySportsData";
@@ -20,7 +20,7 @@ export const todaysBirthday = async (date?: Date) => {
   const athletes = await prisma.athlete.findMany({
     where: {
       birthday: {
-        startsWith: `${dateMoment.format("M/DD/")}`,
+        startsWith: dateMoment.format("M/D/"),
       },
     },
     select: {
@@ -106,6 +106,118 @@ export const todaysBirthday = async (date?: Date) => {
   });
 
   return playersWithBirthdayAndGame;
+};
+
+export const getSeasonBirthdayStats = async () => {
+  const games = await prisma.game.findMany({
+    where: {
+      League: { abbreviation: "NFL" },
+      Season: { displayYear: "2023", type: 2 },
+    },
+    select: {
+      date: true,
+      id: true,
+      Statistics: {
+        select: {
+          AthleteGameStatistics: {
+            where: {
+              OR: [
+                {
+                  NflStatistic: {
+                    RushingStatistic: {
+                      attempts: {
+                        gt: 0,
+                      },
+                    },
+                  },
+                },
+                {
+                  NflStatistic: {
+                    ReceivingStatistic: {
+                      targets: {
+                        gt: 0,
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+            select: {
+              athleteId: true,
+              id: true,
+              NflStatistic: {
+                select: {
+                  RushingStatistic: {
+                    select: {
+                      attempts: true,
+                      touchdowns: true,
+                    },
+                  },
+                  ReceivingStatistic: {
+                    select: {
+                      targets: true,
+                      touchdowns: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const resp = await Promise.all(
+    games.map(async (g) => {
+      const athletes = await prisma.athlete.findMany({
+        where: {
+          id: {
+            in: g.Statistics?.AthleteGameStatistics.map((ags) => ags.athleteId),
+          },
+          birthday: { startsWith: moment(g.date).format("M/D/") },
+        },
+        include: {
+          Position: {
+            select: {
+              displayName: true,
+            },
+          },
+        },
+      });
+      return { game: g, athletes };
+    })
+  );
+
+  const filteredResp = resp.filter((r) => r.athletes.length > 0);
+  const allowedPositions = ["Running Back", "Wide Receiver", "Tight End"];
+  const positionStats = filteredResp.reduce((acc, r) => {
+    r.athletes.forEach((a) => {
+      if (!a.Position) return;
+      if (!allowedPositions.includes(a.Position.displayName)) return;
+      if (!acc[a.Position.displayName]) {
+        acc[a.Position.displayName] = {
+          touchdowns: 0,
+          games: 0,
+        };
+      }
+      const stats = r.game.Statistics?.AthleteGameStatistics.find(
+        (ags) => ags.athleteId === a.id
+      );
+      if (stats) {
+        if (stats.NflStatistic.RushingStatistic?.touchdowns > 0) {
+          acc[a.Position.displayName].touchdowns += 1;
+        }
+        if (stats.NflStatistic.ReceivingStatistic?.touchdowns > 0) {
+          acc[a.Position.displayName].touchdowns += 1;
+        }
+        acc[a.Position.displayName].games += 1;
+      }
+    });
+    return acc;
+  }, {} as Record<string, { touchdowns: number; games: number }>);
+
+  return positionStats;
 };
 
 export const getDraftBoard = async () => {

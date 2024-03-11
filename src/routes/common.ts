@@ -8,6 +8,7 @@ import {
   getGameStatistics,
   getLeaguesWithTeams,
   resetData,
+  getSeasonBirthdayStats,
   todaysBirthday,
 } from "../handlers/common";
 import { listTeamAthletes } from "../models/athletes";
@@ -237,6 +238,26 @@ export const commonRoutes = (app: Express, logger: Logger) => {
       res.status(500).json({ err });
     }
   });
+
+  app.get("/getSeasonBirthdayStats", async (req, res) => {
+    try {
+      const seasonBirthdayStats = await getSeasonBirthdayStats();
+      res.status(200).json(seasonBirthdayStats);
+    } catch (err) {
+      logger.error(err);
+      res.status(500).json({ err });
+    }
+  });
+
+  // app.get("/getFootballBirthdayStats", async (req, res) => {
+  //   try {
+  //     const playersWithBirthdayAndGame = await todaysBirthday(date);
+  //     res.status(200).json(playersWithBirthdayAndGame);
+  //   } catch (err) {
+  //     logger.error(err);
+  //     res.status(500).json({ err });
+  //   }
+  // });
 
   // app.get("/birthdayStats", async (req, res) => {
   //   try {
