@@ -247,7 +247,6 @@ export const getSeasonBirthdayStats = async () => {
             acc[a.Position.displayName].goals = 0;
           }
           acc[a.Position.displayName].goals += 1;
-          console.log(acc[a.Position.displayName]);
         }
         acc[a.Position.displayName].games += 1;
       }
