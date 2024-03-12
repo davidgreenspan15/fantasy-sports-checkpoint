@@ -111,8 +111,16 @@ export const todaysBirthday = async (date?: Date) => {
 export const getSeasonBirthdayStats = async () => {
   const games = await prisma.game.findMany({
     where: {
-      League: { abbreviation: "NFL" },
-      Season: { displayYear: "2023", type: 2 },
+      OR: [
+        {
+          League: { abbreviation: "NFL" },
+          Season: { displayYear: "2023", type: 2 },
+        },
+        {
+          League: { abbreviation: "NHL" },
+          Season: { displayYear: "2023-24", type: 2 },
+        },
+      ],
     },
     select: {
       date: true,
@@ -140,6 +148,13 @@ export const getSeasonBirthdayStats = async () => {
                     },
                   },
                 },
+                {
+                  NhlStatistic: {
+                    SkaterStatistic: {
+                      isNot: null,
+                    },
+                  },
+                },
               ],
             },
             select: {
@@ -149,14 +164,21 @@ export const getSeasonBirthdayStats = async () => {
                 select: {
                   RushingStatistic: {
                     select: {
-                      attempts: true,
                       touchdowns: true,
                     },
                   },
                   ReceivingStatistic: {
                     select: {
-                      targets: true,
                       touchdowns: true,
+                    },
+                  },
+                },
+              },
+              NhlStatistic: {
+                select: {
+                  SkaterStatistic: {
+                    select: {
+                      goals: true,
                     },
                   },
                 },
@@ -190,7 +212,16 @@ export const getSeasonBirthdayStats = async () => {
   );
 
   const filteredResp = resp.filter((r) => r.athletes.length > 0);
-  const allowedPositions = ["Running Back", "Wide Receiver", "Tight End"];
+  const allowedPositions = [
+    "Running Back",
+    "Wide Receiver",
+    "Tight End",
+    "Left Wing",
+    "Right Wing",
+    "Center",
+    "Defense",
+    "Quarterback",
+  ];
   const positionStats = filteredResp.reduce((acc, r) => {
     r.athletes.forEach((a) => {
       if (!a.Position) return;
@@ -205,17 +236,24 @@ export const getSeasonBirthdayStats = async () => {
         (ags) => ags.athleteId === a.id
       );
       if (stats) {
-        if (stats.NflStatistic.RushingStatistic?.touchdowns > 0) {
+        if (stats.NflStatistic?.RushingStatistic?.touchdowns > 0) {
           acc[a.Position.displayName].touchdowns += 1;
         }
-        if (stats.NflStatistic.ReceivingStatistic?.touchdowns > 0) {
+        if (stats.NflStatistic?.ReceivingStatistic?.touchdowns > 0) {
           acc[a.Position.displayName].touchdowns += 1;
+        }
+        if (stats.NhlStatistic?.SkaterStatistic?.goals > 0) {
+          if (!acc[a.Position.displayName].goals) {
+            acc[a.Position.displayName].goals = 0;
+          }
+          acc[a.Position.displayName].goals += 1;
+          console.log(acc[a.Position.displayName]);
         }
         acc[a.Position.displayName].games += 1;
       }
     });
     return acc;
-  }, {} as Record<string, { touchdowns: number; games: number }>);
+  }, {} as Record<string, { touchdowns: number; games: number; goals?: number }>);
 
   return positionStats;
 };
